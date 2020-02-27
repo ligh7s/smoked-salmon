@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block title %}Spectrals{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script src="{{ static('/scripts/lightbox.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<p><span class="message centered">Click any spectral to view an enlarged version of its zoom.</span></p>
+<div class="spectrals_wrapper">
+    {% for id, filename in spectrals.items() %}
+    <p><span class="filename_spectral">{{ filename }}</span></p>
+    <div class="track_spectrals">
+        <div class="full_spectral_image">
+            <img src="{{ static('/specs') }}/{{ '%02d' | format(id) }} Full.png"
+                 alt="Full spectral for {{ filename }}"
+                 onclick="show_lightbox({{ id }});">
+        </div>
+        <div class="zoom_spectral_image">
+            <img src="{{ static('/specs') }}/{{ '%02d' | format(id) }} Zoom.png"
+                 alt="Zoom spectral for {{ filename }}"
+                 onclick="show_lightbox({{ id }});">
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div id="lightbox" style="display: none"></div>
+{% endblock %}

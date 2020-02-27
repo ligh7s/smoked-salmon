@@ -1,0 +1,10 @@
+# Read what each of these settings do here:
+# https://gitlab.com/rapidlyblinking/smoked-salmon/wikis/configuration
+# There are many optional settings you can also set.
+
+DOWNLOAD_DIRECTORY = '/path/to/folder/for/the/releases'
+DOTTORRENTS_DIR = '/path/to/folder/for/these.torrents'
+DOWNLOAD_QUEUE_FOLDER = '/path/to/folder/for/the/queue'
+RED_SESSION = 'red-session'
+PTPIMG_KEY = 'ptpimg-key'
+DISCOGS_TOKEN = 'discogs-token'

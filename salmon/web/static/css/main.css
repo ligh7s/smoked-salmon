@@ -1,0 +1,116 @@
+/* rich black #04080f
+ * cyan azure #507dbc
+ * baby blue eyes #a1c6ea
+ * pale aqua #bbd1ea
+ * platinum #dae3e5
+ **/
+
+* {
+  margin: 0;
+  padding: 0;
+  color: #04080f;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+
+body {
+  background-color: #dae3e5;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+
+header {
+  height: 50px;
+  width: calc(100% - 40px);
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+
+.headerbg {
+  background-color: #bbd1ea;
+  height: 50px;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+}
+
+header .logo {
+  height: 100%;
+  width: auto;
+}
+
+header .logo img {
+  max-height: 100%;
+}
+
+div.body {
+  max-width: 1400px;
+  padding: 40px 20px;
+  margin: 0 auto;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+
+footer {
+  width: 95%;
+  max-width: 1340px;
+  padding: 10px 0;
+  margin: 0 auto;
+  border-top: 1px solid #507dbc;
+  font-size: 11px;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+p {
+	font-family: "Lucida Console", Monaco, monospace;
+}
+
+.centered {
+  display: block;
+  text-align: center;
+}
+
+.message {
+  margin-bottom: 30px;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+
+.single_message{
+	font-family: "Lucida Console", Monaco, monospace;
+}
+
+.track_spectrals {
+  display: flex;
+  flex-flow: horizontal nowrap;
+}
+
+.full_spectral_image {
+  width: 86%;
+}
+
+.zoom_spectral_image {
+  width: 13.85%;
+  margin-left: 0.15%;
+}
+
+.full_spectral_image img, .zoom_spectral_image img, #lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+#lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(4, 8, 15, 0.8);
+  transition: all 0.2s linear;
+}
+
+#lightbox img {
+  display: block;
+  max-height: 90vh;
+  max-width: 90%;
+  margin: 5vh auto;
+}

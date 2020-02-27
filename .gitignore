@@ -1,0 +1,10 @@
+__pycache__
+.pytest_cache
+*.egg-info
+
+smoked.db*
+config.py
+accounts.json
+salmon/web/static/specs
+!.gitkeep
+plugins/
