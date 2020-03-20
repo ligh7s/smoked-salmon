@@ -26,6 +26,7 @@ heybrochecklog = "^1.3.2"
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
 isort = "^4.3.21"
+flake8 = "^3.7.9"
 
 [tool.black]
 line-length = 88
