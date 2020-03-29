@@ -222,3 +222,6 @@ yarl==1.4.2 \
     --hash=sha256:6faa19d3824c21bcbfdfce5171e193c8b4ddafdf0ac3f129ccf0cdfcb083e462 \
     --hash=sha256:0ca2f395591bbd85ddd50a82eb1fde9c1066fafe888c5c7cc1d810cf03fd3cc6 \
     --hash=sha256:58cd9c469eced558cd81aa3f484b2924e8897049e06889e8ff2510435b7ef74b
+yaspin==0.16.0 \
+    --hash=sha256:e88bf9c9fe4ac588e3620588aadae655dfc20f1f7460338394ef4693bdc2b800 \
+    --hash=sha256:efca3eb7162e575d3ab2e49743cd9bd1f5ec2adc7d85b9489ab145a3f6460ed4
