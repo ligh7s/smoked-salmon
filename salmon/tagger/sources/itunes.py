@@ -27,7 +27,7 @@ class Scraper(iTunesBase, MetadataMixin):
                 "picture.product-artwork.product-artwork--captioned"
                 ".we-artwork--fullwidth.we-artwork.ember-view source"
             )[0]["srcset"]
-            return re.search(r",(https://[^,]+\.jpg) 3x", art)[1]
+            return re.search(r",(https://[^,]+\.jpg) 2x", art)[1]
         except (TypeError, IndexError) as e:
             raise ScrapeError("Could not parse cover URL.") from e
 
