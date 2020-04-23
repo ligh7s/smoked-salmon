@@ -119,8 +119,8 @@ def _prompt_for_group_id(results,offer_deletion):
         group_id = click.prompt(
             click.style(
                 "\nWould you like to upload to an existing group?\n"
-                f'Either pick from above or paste a release group URL or [a]bort {"[d]elete folder " if offer_deletion else ""}'
-                f"(leave blank for a new group)",
+                f'Either pick from above, paste a release group URL or [a]bort {"[d]elete folder " if offer_deletion else ""}'
+                f"(leave blank to create a new group)",
                 fg="magenta",
                 bold=True,
             ),
@@ -132,7 +132,7 @@ def _prompt_for_group_id(results,offer_deletion):
                 group_id=results[group_id]['groupId'] 
                 return int(group_id)
             except IndexError:
-                click.echo(f"Please either choose from the options or paste a URL", nl=False)
+                click.echo(f"Please either choose a release group from the options above or paste a URL", nl=False)
                 continue
         elif group_id.lower().startswith("https://redacted.ch/torrents.php"):
             group_id=parse.parse_qs(parse.urlparse(group_id).query)['id'][0]                                                                           
