@@ -52,6 +52,7 @@ class RedApi:
         "Connection": "keep-alive",
         "Cache-Control": "max-age=0",
         "User-Agent": config.USER_AGENT,
+        "Authorization": config.RED_API_KEY,
     }
 
     def __init__(self):
@@ -169,7 +170,7 @@ class RedApi:
 
     async def upload(self, data, files):
         """Attempt to upload a torrent to RED."""
-        url = self.base_url + "upload.php"
+        url = self.base_url + "ajax.php?action=upload"
         data["auth"] = self.authkey
         resp = await loop.run_in_executor(
             None,
@@ -177,20 +178,12 @@ class RedApi:
                 url, data=data, files=files, headers=self.headers
             ),
         )
-
-        if self.announce in resp.text:
-            match = re.search(
-                r'<p style="color: red; text-align: center;">(.+)<\/p>', resp.text,
-            )
-            if match:
-                raise RequestError(f"Upload failed: {match[1]} ({resp.status_code})")
-
-        try:
-            return parse_most_recent_torrent_and_group_id_from_group_page(
-                resp.url, resp.text
-            )
-        except TypeError:
-            raise RequestError(f"Upload failed, response text: {resp.text}")
+        resp = resp.json()
+        # print(resp) debug
+        if resp["status"] != "success":
+            raise RequestError(f"Upload failed: {resp['error']}")
+        elif resp["status"] == "success":
+            return resp["response"][0]["torrentid"], resp["response"][0]["groupid"]
 
     async def report_lossy_master(self, torrent_id, comment, type_="lossywebapproval"):
         """Automagically report a torrent for lossy master/web approval."""
@@ -222,21 +215,6 @@ def compile_artists(artists, release_type):
     if release_type == 7 or len(artists) > 3:
         return config.VARIOUS_ARTIST_WORD
     return " & ".join([a["name"] for a in artists])
-
-
-def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
-    """
-    Given the JSON response from a successful upload, find the most
-    recently uploaded torrent (it better be ours).
-    """
-    group_id = int(re.search(r"\?id=(\d+)", url)[1])
-    torrent_ids = []
-    soup = BeautifulSoup(text, "html.parser")
-    for pl in soup.select(".tooltip.button_pl"):
-        torrent_ids.append(
-            int(re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])[1])
-        )
-    return max(torrent_ids), group_id
 
 
 RED_API = RedApi()
