@@ -20,14 +20,14 @@ def check_existing_group(searchstrs, offer_deletion=True):
     """
     results = get_search_results(searchstrs)
     print_search_results(results, " / ".join(searchstrs))
-    group_id = _prompt_for_group_id(results,offer_deletion)
+    group_id = _prompt_for_group_id(results, offer_deletion)
     if group_id:
         confirmation = _confirm_group_id(group_id, results)
         if confirmation is True:
             return group_id
         return None
     return group_id
-    
+
 
 def get_search_results(searchstrs):
     results = []
@@ -100,10 +100,11 @@ def print_search_results(results, searchstr):
             "\nResults matching this release were found on RED: ", fg="red", nl=False
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
-        for r_index,r in enumerate(results):
+        for r_index, r in enumerate(results):
             try:
                 url = f'https://redacted.ch/torrents.php?id={r["groupId"]}'
-                click.echo(f" {r_index+1:02d} >> {r['groupId']} | ", nl=False) #User doesn't get zero index
+                # User doesn't get zero index
+                click.echo(f" {r_index+1:02d} >> {r['groupId']} | ", nl=False)
                 click.secho(f"{r['artist']} - {r['groupName']} ", fg="cyan", nl=False)
                 click.secho(
                     f"({r['groupYear']}) [{r['releaseType']}] ", fg="yellow", nl=False
@@ -113,7 +114,7 @@ def print_search_results(results, searchstr):
                 continue
 
 
-def _prompt_for_group_id(results,offer_deletion):
+def _prompt_for_group_id(results, offer_deletion):
     """Have the user choose a group ID"""
     while True:
         group_id = click.prompt(
@@ -126,16 +127,17 @@ def _prompt_for_group_id(results,offer_deletion):
             ),
             default="",
         )
-        if group_id.isdigit():
-            group_id=int(group_id)-1 #User doesn't type zero index
+        if group_id.strip().isdigit():
+            group_id = int(group_id) - 1  # User doesn't type zero index
             try:
-                group_id=results[group_id]['groupId'] 
+                group_id = results[group_id]['groupId']
                 return int(group_id)
             except IndexError:
-                click.echo(f"Please either choose a release group from the options above or paste a URL", nl=False)
+                click.echo(
+                    f"Please either choose a release group from the options above or paste a URL", nl=False)
                 continue
         elif group_id.lower().startswith("https://redacted.ch/torrents.php"):
-            group_id=parse.parse_qs(parse.urlparse(group_id).query)['id'][0]                                                                           
+            group_id = parse.parse_qs(parse.urlparse(group_id).query)['id'][0]
             return int(group_id)
         elif group_id.lower().startswith("a"):
             raise click.Abort
@@ -148,8 +150,8 @@ def _prompt_for_group_id(results,offer_deletion):
 def _print_torrents(group_id, rset):
     """Print the torrents that are a part of the torrent group."""
     group_info = {}
-    #Be nice to show the artist(s) here but it isn't the same format if they came from a URL
-    click.secho(f"\nSelected ID: {rset['groupId']} ",nl=False)
+    # Be nice to show the artist(s) here but it isn't the same format if they came from a URL
+    click.secho(f"\nSelected ID: {rset['groupId']} ", nl=False)
     click.secho(f" - {rset['groupName']} ", fg="cyan", nl=False)
     click.secho(f"({rset['groupYear']})", fg="yellow")
     click.secho("Torrents in this group:", fg="yellow", bold=True)
@@ -180,10 +182,10 @@ def _confirm_group_id(group_id, results):
     else:
         try:
             rset = loop.run_until_complete(RED_API.torrentgroup(group_id))
-            ##account for differences between search result and group result json
-            rset['groupName']=rset['group']['name']
-            rset['groupId']=rset['group']['id']
-            rset['groupYear']=rset['group']['year']
+            # account for differences between search result and group result json
+            rset['groupName'] = rset['group']['name']
+            rset['groupId'] = rset['group']['id']
+            rset['groupYear'] = rset['group']['year']
         except RequestError:
             click.secho(f"{group_id} does not exist.", fg="red")
             raise click.Abort
