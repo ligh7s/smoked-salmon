@@ -18,32 +18,22 @@ class Searcher(JunodownloadBase, SearchMixin):
             },
             allow_redirects=False,
         )
-        for meta in soup.select(
-            "#page_nav + .product-list .productlist_widget_product_detail"
-        ):
+        for meta in soup.find_all('div', attrs = { 'class': 'row gutters-sm jd-listing-item', 'data-ua_location': 'release' } ):
             try:
-                header_type = meta.select("div.productlist_widget_product_info")[0][
-                    "ua_location"
-                ]
-                if header_type != "release header":  # Fuck sample packs, etc.
-                    continue
-
-                su_title = meta.select(
-                    ".productlist_widget_product_title .jq_highlight.pwrtext a"
-                )[0]
+                su_title = meta.find( 'a', attrs = { 'class': 'juno-title' } )
                 rls_id = re.search(r"/products/[^/]+/([\d-]+)", su_title["href"])[1]
                 title = su_title.string
 
-                date = meta.select(".productlist_widget_product_preview_buy span")[
-                    0
-                ].string
+                right_blob = meta.find('div', attrs = { 'class': 'text-sm mb-3 mb-lg-4' } )
+                date = right_blob.find('br').next_sibling.strip()
                 year = 2000 + int(date[-2:])
+                catno = right_blob.find('br').previous_sibling.strip().replace(' ', '')
+
+                ar_blob = meta.find('div', attrs = { 'class': 'col juno-artist'})
 
                 ar_li = [
                     a.string.title()
-                    for a in meta.select(
-                        ".productlist_widget_product_artists .jq_highlight.pwrtext a"
-                    )
+                    for a in ar_blob.find_all('a')
                     if a.string
                 ]
                 artists = (
@@ -52,14 +42,8 @@ class Searcher(JunodownloadBase, SearchMixin):
                     else config.VARIOUS_ARTIST_WORD
                 )
 
-                label = meta.select(
-                    ".productlist_widget_product_label .jq_highlight.pwrtext a"
-                )[0].string.strip()
-                catno = (
-                    meta.select(".productlist_widget_product_preview_buy")[0]
-                    .text.split("\n")[1]
-                    .strip()
-                )
+                label_blob = meta.find( 'a', attrs = { 'class': 'juno-label' } )
+                label = label_blob.text.strip()
 
                 if label.lower() not in config.SEARCH_EXCLUDED_LABELS:
                     releases[rls_id] = (
