@@ -150,9 +150,9 @@ def _prompt_for_group_id(results, offer_deletion):
 def _print_torrents(group_id, rset):
     """Print the torrents that are a part of the torrent group."""
     group_info = {}
-    # Be nice to show the artist(s) here but it isn't the same format if they came from a URL
-    click.secho(f"\nSelected ID: {rset['groupId']} ", nl=False)
-    click.secho(f" - {rset['groupName']} ", fg="cyan", nl=False)
+
+    click.secho(f"\nSelected ID: {rset['groupId']} | ", nl=False)
+    click.secho(f"{rset['artist']} - {rset['groupName']} ", fg="cyan", nl=False)
     click.secho(f"({rset['groupYear']})", fg="yellow")
     click.secho("Torrents in this group:", fg="yellow", bold=True)
     for t in rset["torrents"]:
@@ -184,6 +184,7 @@ def _confirm_group_id(group_id, results):
             rset = loop.run_until_complete(RED_API.torrentgroup(group_id))
             # account for differences between search result and group result json
             rset['groupName'] = rset['group']['name']
+            rest['artist'] = rset['group']['artists'].join(" , ")
             rset['groupId'] = rset['group']['id']
             rset['groupYear'] = rset['group']['year']
         except RequestError:
