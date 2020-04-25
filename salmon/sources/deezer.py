@@ -46,7 +46,7 @@ class DeezerBase(BaseScraper):
 
         self._session = requests.Session()
         try:
-            from salmon.downloader.accounts import ACCOUNTS
+            from plugins.downloader.accounts import ACCOUNTS
         except ImportError:
             return self._session
 

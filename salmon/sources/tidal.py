@@ -55,7 +55,7 @@ def get_tidal_regions_to_fetch():
         return config.TIDAL_FETCH_REGIONS
     else:
         try:
-            from salmon.downloader.accounts import ACCOUNTS
+            from plugins.downloader.accounts import ACCOUNTS
 
             if "Tidal" in ACCOUNTS:
                 return [k for k, v in ACCOUNTS["Tidal"].items() if v]

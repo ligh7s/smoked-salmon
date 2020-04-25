@@ -108,7 +108,7 @@ def _fix_format(metadata, keys):
         if metadata["format"] == "FLAC" and metadata["encoding"] == "24bit Lossless":
             sub_metadata["format"] = "24bit FLAC"
         elif metadata["format"] == "MP3":
-            enc = re.sub(r" \(VBR\)", "", metadata["encoding"])
+            enc = re.sub(r" \(VBR\)", "", str(metadata["encoding"]))
             sub_metadata["format"] = f"MP3 {enc}"
             if metadata["encoding_vbr"]:
                 sub_metadata["format"] += " (VBR)"
