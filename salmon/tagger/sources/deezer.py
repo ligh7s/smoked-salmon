@@ -62,8 +62,8 @@ class Scraper(DeezerBase, MetadataMixin):
                 stream_id=track["SNG_ID"],
                 md5_origin=track.get("MD5_ORIGIN"),
                 media_version=track.get("MEDIA_VERSION"),
-                lossless=bool(int(track.get("FILESIZE_FLAC"))),
-                mp3_320=bool(int(track.get("FILESIZE_MP3_320"))),
+                lossless=True,
+                mp3_320=True,
             )
         return dict(tracks)
 
