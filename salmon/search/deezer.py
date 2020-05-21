@@ -4,12 +4,15 @@ from itertools import chain
 
 from salmon.search.base import ArtistRlsData, IdentData, SearchMixin
 from salmon.sources import DeezerBase
-
+from ratelimit import limits, sleep_and_retry
 
 class Searcher(DeezerBase, SearchMixin):
+    #@sleep_and_retry
+    #@limits(49,5)
     async def search_releases(self, searchstr, limit):
         releases = {}
         resp = await self.get_json("/search/album", params={"q": searchstr})
+        #print(resp)
         for rls in resp["data"]:
             releases[rls["id"]] = (
                 IdentData(
