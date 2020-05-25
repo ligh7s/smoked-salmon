@@ -7,14 +7,15 @@ import click
 
 from salmon.common import RE_FEAT, make_searchstrs
 from salmon.errors import AbortAndDeleteFolder
-from salmon.red import RED_API, RequestError
+
+from salmon.gazelle import GAZELLE_API, RequestError
 
 loop = asyncio.get_event_loop()
 
 
 def check_existing_group(searchstrs, offer_deletion=True):
     """
-    Make a request to the RED API with a dupe-check searchstr,
+    Make a request to the API with a dupe-check searchstr,
     then have the user validate that the torrent does not match
     anything on site.
     """
@@ -33,7 +34,7 @@ def get_search_results(searchstrs):
     results = []
     for searchstr in searchstrs:
         for release in loop.run_until_complete(
-            RED_API.request("browse", searchstr=searchstr)
+            GAZELLE_API.request("browse", searchstr=searchstr)
         )["results"]:
             if release not in results:
                 results.append(release)
@@ -89,21 +90,21 @@ def filter_unnecessary_searchstrs(searchstrs):
 
 
 def print_search_results(results, searchstr):
-    """Print all the RED search results."""
+    """Print all the site search results."""
     if not results:
         click.secho(
-            "\nNo groups found on RED matching this release.", fg="green", nl=False
+            f'\nNo groups found on {GAZELLE_API.site_string} matching this release.', fg="green", nl=False
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
     else:
         click.secho(
-            "\nResults matching this release were found on RED: ", fg="red", nl=False
+            f'\nResults matching this release were found on {GAZELLE_API.site_string}: ', fg="red", nl=False
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for r_index, r in enumerate(results):
             try:
-                url = f'https://redacted.ch/torrents.php?id={r["groupId"]}'
-                # User doesn't get zero index
+                url = f'{GAZELLE_API.base_url}/torrents.php?id={r["groupId"]}'
+                # User doesn't get to pick a zero index
                 click.echo(f" {r_index+1:02d} >> {r['groupId']} | ", nl=False)
                 click.secho(f"{r['artist']} - {r['groupName']} ", fg="cyan", nl=False)
                 click.secho(
@@ -136,7 +137,7 @@ def _prompt_for_group_id(results, offer_deletion):
                 click.echo(
                     f"Please either choose from the options or paste a URL", nl=False)
                 continue
-        elif group_id.strip().lower().startswith("https://redacted.ch/torrents.php"):
+        elif group_id.strip().lower().startswith(GAZELLE_API.base_url + "/torrents.php"):
             group_id = parse.parse_qs(parse.urlparse(group_id).query)['id'][0]
             return int(group_id)
         elif group_id.lower().startswith("a"):
@@ -164,7 +165,7 @@ def _print_torrents(group_id, rset):
             )
         if not t["remastered"]:
             if not group_info:
-                group_info = loop.run_until_complete(RED_API.torrentgroup(group_id))[
+                group_info = loop.run_until_complete(GAZELLE_API.torrentgroup(group_id))[
                     "group"
                 ]
             click.echo(
@@ -182,10 +183,10 @@ def _confirm_group_id(group_id, results):
             break
     else:
         try:
-            rset = loop.run_until_complete(RED_API.torrentgroup(group_id))
+            rset = loop.run_until_complete(GAZELLE_API.torrentgroup(group_id))
             # account for differences between search result and group result json
             rset['groupName'] = rset['group']['name']
-            rset['artist']=""
+            rset['artist'] = ""
             for a in rset['group']['musicInfo']['artists']:
                 rset['artist'] += a['name'] + " "
             rset['groupId'] = rset['group']['id']

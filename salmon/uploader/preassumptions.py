@@ -5,7 +5,8 @@ import click
 
 from salmon import config
 from salmon.errors import UploadError
-from salmon.red import RED_API, RequestError
+
+from salmon.gazelle import GAZELLE_API, RequestError
 
 loop = asyncio.get_event_loop()
 
@@ -58,7 +59,7 @@ def print_group_info(group_id, source):
     Also print all the torrents that are in that group.
     """
     try:
-        group = loop.run_until_complete(RED_API.torrentgroup(group_id))
+        group = loop.run_until_complete(GAZELLE_API.torrentgroup(group_id))
     except RequestError:
         raise UploadError("Could not get information about torrent group from RED.")
 

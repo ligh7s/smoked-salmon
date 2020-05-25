@@ -10,7 +10,9 @@ from salmon import config
 from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
-from salmon.red import RED_API
+
+from salmon.gazelle import GAZELLE_API
+
 from salmon.tagger import (
     metadata_validator_base,
     validate_encoding,
@@ -95,7 +97,7 @@ loop = asyncio.get_event_loop()
 )
 def up(path, group_id, source, lossy, spectrals, overwrite, encoding, compress):
     """Upload an album folder to RED"""
-    RED_API.authenticate()
+    GAZELLE_API.authenticate()
     print_preassumptions(path, group_id, source, lossy, spectrals, encoding)
     upload(
         path,
@@ -193,7 +195,7 @@ def upload(
             source_url=source_url,
         )
 
-    url = f"https://redacted.ch/torrents.php?id={group_id}&torrentid={torrent_id}"
+    url = f"{GAZELLE_API.base_url}/torrents.php?id={group_id}&torrentid={torrent_id}"
     click.secho(
         f"\nSuccessfully uploaded {url} ({os.path.basename(path)}).",
         fg="green",

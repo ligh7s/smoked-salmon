@@ -11,7 +11,10 @@ from salmon import config
 from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES, RELEASE_TYPES
 from salmon.images import upload_cover
-from salmon.red import RED_API, RequestError
+
+from salmon.gazelle import GAZELLE_API, RequestError
+
+
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.sources import METASOURCES
 
@@ -43,7 +46,7 @@ def prepare_and_upload(
 
     click.secho(f"Uploading torrent...", fg="yellow")
     try:
-        torrent_id, group_id = loop.run_until_complete(RED_API.upload(data, files))
+        torrent_id, group_id = loop.run_until_complete(GAZELLE_API.upload(data, files))
         shutil.move(
             torrent_path,
             os.path.join(config.DOTTORRENTS_DIR, f"{os.path.basename(path)}.torrent"),
@@ -66,7 +69,7 @@ def report_lossy_master(
     comment = _add_spectral_links_to_lossy_comment(
         comment, source_url, spectral_urls, filenames
     )
-    loop.run_until_complete(RED_API.report_lossy_master(torrent_id, comment, type_))
+    loop.run_until_complete(GAZELLE_API.report_lossy_master(torrent_id, comment, type_))
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 
@@ -202,7 +205,8 @@ def attach_logfiles(path):
 def generate_torrent(path):
     """Call the dottorrent function to generate a torrent."""
     click.secho("Generating torrent file...", fg="yellow", nl=False)
-    t = Torrent(path, trackers=[RED_API.announce], private=True, source="RED")
+    t = Torrent(path, trackers=[GAZELLE_API.announce],
+                private=True, source=GAZELLE_API.site_string)
     t.generate()
     tpath = os.path.join(tempfile.gettempdir(), f"{os.path.basename(path)}.torrent")
     with open(tpath, "wb") as tf:
@@ -306,7 +310,7 @@ def generate_source_links(metadata_urls):
     for url in metadata_urls:
         for name, source in METASOURCES.items():
             if source.Scraper.regex.match(url):
-                if config.ICONS_IN_RED_DESCRIPTIONS:
+                if config.ICONS_IN_DESCRIPTIONS:
                     links.append(
                         f"[pad=0|3][url={url}][img=18]{SOURCE_ICONS[name]}[/img] "
                         f"{name}[/url][/pad]"
@@ -314,6 +318,6 @@ def generate_source_links(metadata_urls):
                 else:
                     links.append(f"[url={url}]{name}[/url]")
                 break
-    if config.ICONS_IN_RED_DESCRIPTIONS:
+    if config.ICONS_IN_DESCRIPTIONS:
         return " ".join(links)
     return " | ".join(links)
