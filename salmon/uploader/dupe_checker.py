@@ -130,13 +130,15 @@ def _prompt_for_group_id(results, offer_deletion):
         )
         if group_id.strip().isdigit():
             group_id = int(group_id) - 1  # User doesn't type zero index
-            try:
+            if group_id<1:group_id=0 # If the user types 0 give them the first choice.
+            if group_id<len(results):
                 group_id = results[group_id]['groupId']
                 return int(group_id)
-            except IndexError:
-                click.echo(
-                    f"Please either choose from the options or paste a URL", nl=False)
-                continue
+            else:
+                group_id=int(group_id)+1
+                click.echo(f"Interpreting {group_id} as a group Id")
+                return group_id
+
         elif group_id.strip().lower().startswith(GAZELLE_API.base_url + "/torrents.php"):
             group_id = parse.parse_qs(parse.urlparse(group_id).query)['id'][0]
             return int(group_id)
@@ -145,6 +147,7 @@ def _prompt_for_group_id(results, offer_deletion):
         elif group_id.lower().startswith("d") and offer_deletion:
             raise AbortAndDeleteFolder
         elif not group_id.strip():
+            click.echo(f"Uploading to a new torrent group.")
             return None
 
 

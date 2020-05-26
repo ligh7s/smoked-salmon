@@ -62,7 +62,7 @@ class GazelleApi:
         self.tracker_url = tracker_details['TRACKER_URL']
         self.site_string = tracker_details['SITE_STRING']
         self.cookie = tracker_details['SITE_SESSION']
-        if tracker_details['SITE_API_KEY']:
+        if 'SITE_API_KEY' in tracker_details.keys():
            self.api_key = self.headers["Authorization"] = tracker_details['SITE_API_KEY']
         self.session = requests.Session()
         self.session.headers.update(self.headers)
@@ -98,7 +98,7 @@ class GazelleApi:
         (at the expense of a potentially longer wait later).
         """
 
-        url = self.base_url + "ajax.php"
+        url = self.base_url + "/ajax.php"
         params = {"action": action, **kwargs}
 
         self.cur_req_count += 1
@@ -218,7 +218,7 @@ class GazelleApi:
 
     async def upload(self, data, files):
         """Upload a torrent using upload.php rather than API. Needed if API Key not found."""
-        if self.api_key:
+        if hasattr(self, 'api_key'):
             return await self.api_key_upload(data, files)
         else:
             return await self.site_page_upload(data, files)
