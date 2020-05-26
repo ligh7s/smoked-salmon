@@ -11,7 +11,7 @@ from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 
-from salmon.gazelle import GAZELLE_API
+from salmon.gazelle import GazelleApi
 
 from salmon.tagger import (
     metadata_validator_base,
@@ -95,11 +95,13 @@ loop = asyncio.get_event_loop()
     is_flag=True,
     help="Recompress flacs to the configured compression level before uploading.",
 )
-def up(path, group_id, source, lossy, spectrals, overwrite, encoding, compress):
+@click.option("--tracker", "-t", default=config.DEFAULT_TRACKER, help="Choose a tracker from Config.py")
+def up(path, group_id, source, lossy, spectrals, overwrite, encoding, compress,tracker):
     """Upload an album folder to RED"""
-    GAZELLE_API.authenticate()
-    print_preassumptions(path, group_id, source, lossy, spectrals, encoding)
+    gazelle_site=GazelleApi(tracker)
+    print_preassumptions(gazelle_site, path, group_id, source, lossy, spectrals, encoding)
     upload(
+        gazelle_site,
         path,
         group_id,
         source,
@@ -112,6 +114,7 @@ def up(path, group_id, source, lossy, spectrals, overwrite, encoding, compress):
 
 
 def upload(
+    gazelle_site,
     path,
     group_id,
     source,
@@ -148,7 +151,7 @@ def upload(
             searchstrs = generate_dupe_check_searchstrs(
                 rls_data["artists"], rls_data["title"], rls_data["catno"]
             )
-            group_id = check_existing_group(searchstrs)
+            group_id = check_existing_group(gazelle_site,searchstrs)
         lossy_master, spectral_ids = check_spectrals(path, audio_info, lossy, spectrals)
         metadata = get_metadata(path, tags, rls_data)
         download_cover_if_nonexistent(path, metadata["cover"])
@@ -156,7 +159,7 @@ def upload(
             path, tags, metadata, source, rls_data, recompress
         )
         if not group_id:
-            group_id = recheck_dupe(searchstrs, metadata)
+            group_id = recheck_dupe(gazelle_site,searchstrs, metadata)
             click.echo()
         track_data = concat_track_data(tags, audio_info)
     except click.Abort:
@@ -176,6 +179,7 @@ def upload(
     spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
 
     torrent_id, group_id = prepare_and_upload(
+        gazelle_site,
         path,
         group_id,
         metadata,
@@ -187,6 +191,7 @@ def upload(
     )
     if lossy_master:
         report_lossy_master(
+            gazelle_site,
             torrent_id,
             spectral_urls,
             track_data,
@@ -195,7 +200,7 @@ def upload(
             source_url=source_url,
         )
 
-    url = f"{GAZELLE_API.base_url}/torrents.php?id={group_id}&torrentid={torrent_id}"
+    url = f"{gazelle_site.base_url}/torrents.php?id={group_id}&torrentid={torrent_id}"
     click.secho(
         f"\nSuccessfully uploaded {url} ({os.path.basename(path)}).",
         fg="green",
@@ -243,7 +248,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress):
     return path, metadata, tags, audio_info
 
 
-def recheck_dupe(searchstrs, metadata):
+def recheck_dupe(gazelle_site,searchstrs, metadata):
     new_searchstrs = generate_dupe_check_searchstrs(
         metadata["artists"], metadata["title"], metadata["catno"]
     )
@@ -254,11 +259,11 @@ def recheck_dupe(searchstrs, metadata):
         and new_searchstrs
     ):
         click.secho(
-            "\nRechecking for duplicates on RED due to metadata changes...",
+            f'\nRechecking for duplicates on {gazelle_site.site_string} due to metadata changes...',
             fg="cyan",
             bold=True,
         )
-        return check_existing_group(new_searchstrs)
+        return check_existing_group(gazelle_site,new_searchstrs)
 
 
 def metadata_validator(metadata):

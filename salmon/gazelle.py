@@ -49,13 +49,13 @@ SearchReleaseData = namedtuple(
 
 
 class GazelleApi:
-
-    def __init__(self, tracker_details):
+    def __init__(self, site_code):
+        tracker_details = config.TRACKERS[site_code]
         self.headers = {
             "Connection": "keep-alive",
             "Cache-Control": "max-age=0",
             "User-Agent": config.USER_AGENT,
-            
+
         }
 
         self.base_url = tracker_details['SITE_URL']
@@ -63,7 +63,7 @@ class GazelleApi:
         self.site_string = tracker_details['SITE_STRING']
         self.cookie = tracker_details['SITE_SESSION']
         if 'SITE_API_KEY' in tracker_details.keys():
-           self.api_key = tracker_details['SITE_API_KEY']
+            self.api_key = tracker_details['SITE_API_KEY']
         self.session = requests.Session()
         self.session.headers.update(self.headers)
         self.last_rate_limit_expiry = time.time() - 10
@@ -71,6 +71,7 @@ class GazelleApi:
 
         self.authkey = None
         self.passkey = None
+        self.authenticate()
 
     @property
     def announce(self):
@@ -86,8 +87,6 @@ class GazelleApi:
             raise LoginError
         self.authkey = acctinfo["authkey"]
         self.passkey = acctinfo["passkey"]
-    
-    
 
     @sleep_and_retry
     @limits(5, 10)
@@ -179,7 +178,7 @@ class GazelleApi:
         """Attempt to upload a torrent to the site."""
         url = self.base_url + "/ajax.php?action=upload"
         data["auth"] = self.authkey
-        headers=self.headers
+        headers = self.headers
         headers["Authorization"] = self.api_key
         resp = await loop.run_in_executor(
             None,
@@ -266,12 +265,11 @@ def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
     torrent_ids = []
     soup = BeautifulSoup(text, "html.parser")
     for pl in soup.find_all("a", class_="tooltip"):
-        torrent_url=re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
+        torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
         if torrent_url:
             torrent_ids.append(
                 int(torrent_url[1])
             )
     return max(torrent_ids), group_id
 
-
-GAZELLE_API = GazelleApi(config.TRACKER_DETAILS)
+GAZELLE_API=GazelleApi('RED')

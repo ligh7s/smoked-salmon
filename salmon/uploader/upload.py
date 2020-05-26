@@ -12,7 +12,7 @@ from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES, RELEASE_TYPES
 from salmon.images import upload_cover
 
-from salmon.gazelle import GAZELLE_API, RequestError
+from salmon.gazelle import GazelleApi, RequestError
 
 
 from salmon.sources import SOURCE_ICONS
@@ -22,6 +22,7 @@ loop = asyncio.get_event_loop()
 
 
 def prepare_and_upload(
+    gazelle_site,
     path,
     group_id,
     metadata,
@@ -41,12 +42,12 @@ def prepare_and_upload(
         data = compile_data_for_group(
             path, group_id, metadata, track_data, hybrid, spectral_urls, lossy_comment
         )
-
-    torrent_path, files = compile_files(path, metadata)
+    torrent_path, torrent_file = generate_torrent(gazelle_site, path)
+    files = compile_files(path, torrent_file, metadata)
 
     click.secho(f"Uploading torrent...", fg="yellow")
     try:
-        torrent_id, group_id = loop.run_until_complete(GAZELLE_API.upload(data, files))
+        torrent_id, group_id = loop.run_until_complete(gazelle_site.upload(data, files))
         shutil.move(
             torrent_path,
             os.path.join(config.DOTTORRENTS_DIR, f"{os.path.basename(path)}.torrent"),
@@ -58,7 +59,7 @@ def prepare_and_upload(
 
 
 def report_lossy_master(
-    torrent_id, spectral_urls, track_data, source, comment, source_url=None
+    gazelle_site, torrent_id, spectral_urls, track_data, source, comment, source_url=None
 ):
     """
     Generate the report description and call the function to report the torrent
@@ -69,7 +70,8 @@ def report_lossy_master(
     comment = _add_spectral_links_to_lossy_comment(
         comment, source_url, spectral_urls, filenames
     )
-    loop.run_until_complete(GAZELLE_API.report_lossy_master(torrent_id, comment, type_))
+    loop.run_until_complete(
+        gazelle_site.report_lossy_master(torrent_id, comment, type_))
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 
@@ -174,19 +176,19 @@ def compile_data_for_group(
     }
 
 
-def compile_files(path, metadata):
+def compile_files(path, torrent_file, metadata):
     """
     Compile a list of file tuples that should be uploaded. This consists
     of the .torrent and any log files.
     """
     files = []
-    torrent_path, torfile = generate_torrent(path)
+
     files.append(
-        ("file_input", ("meowmeow.torrent", torfile, "application/octet-stream"))
+        ("file_input", ("meowmeow.torrent", torrent_file, "application/octet-stream"))
     )
     if metadata["source"] == "CD":
         files += attach_logfiles(path)
-    return torrent_path, files
+    return files
 
 
 def attach_logfiles(path):
@@ -202,11 +204,11 @@ def attach_logfiles(path):
     return [("logfiles[]", lf) for lf in logfiles]
 
 
-def generate_torrent(path):
+def generate_torrent(gazelle_site, path):
     """Call the dottorrent function to generate a torrent."""
     click.secho("Generating torrent file...", fg="yellow", nl=False)
-    t = Torrent(path, trackers=[GAZELLE_API.announce],
-                private=True, source=GAZELLE_API.site_string)
+    t = Torrent(path, trackers=[gazelle_site.announce],
+                private=True, source=gazelle_site.site_string)
     t.generate()
     tpath = os.path.join(tempfile.gettempdir(), f"{os.path.basename(path)}.torrent")
     with open(tpath, "wb") as tf:

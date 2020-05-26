@@ -6,12 +6,12 @@ import click
 from salmon import config
 from salmon.errors import UploadError
 
-from salmon.gazelle import GAZELLE_API, RequestError
+from salmon.gazelle import GazelleApi, RequestError
 
 loop = asyncio.get_event_loop()
 
 
-def print_preassumptions(path, group_id, source, lossy, spectrals, encoding):
+def print_preassumptions(gazelle_site, path, group_id, source, lossy, spectrals, encoding):
     """Print what all the passed CLI options will do."""
     click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
     second = []
@@ -41,7 +41,7 @@ def print_preassumptions(path, group_id, source, lossy, spectrals, encoding):
         )
 
     if group_id:
-        print_group_info(group_id, source)
+        print_group_info(gazelle_site, group_id, source)
         click.confirm(
             click.style(
                 "\nWould you like to continue to upload to this group?",
@@ -53,13 +53,13 @@ def print_preassumptions(path, group_id, source, lossy, spectrals, encoding):
         )
 
 
-def print_group_info(group_id, source):
+def print_group_info(gazelle_site, group_id, source):
     """
     Print information about the torrent group that was passed as a CLI argument.
     Also print all the torrents that are in that group.
     """
     try:
-        group = loop.run_until_complete(GAZELLE_API.torrentgroup(group_id))
+        group = loop.run_until_complete(gazelle_site.torrentgroup(group_id))
     except RequestError:
         raise UploadError("Could not get information about torrent group from RED.")
 

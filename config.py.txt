@@ -7,11 +7,21 @@ DOTTORRENTS_DIR = '/path/to/folder/for/these.torrents'
 DOWNLOAD_QUEUE_FOLDER = '/path/to/folder/for/the/queue'
 PTPIMG_KEY = 'ptpimg-key'
 DISCOGS_TOKEN = 'discogs-token'
-
-TRACKER_DETAILS = {
+DEFAULT_TRACKER = 'RED'
+RED_DETAILS = {
     'SITE_URL': 'https://redacted.ch',
     'TRACKER_URL': 'https://flacsfor.me',
     'SITE_STRING': 'RED',
     'SITE_SESSION': 'red-session',
     'SITE_API_KEY': 'red-api-key-needs-uploading-privileges'
+}
+OPS_DETAILS = {
+    'SITE_URL': 'https://orpheus.network',
+    'TRACKER_URL': 'https://home.opsfet.ch',
+    'SITE_STRING': 'OPS',
+    'SITE_SESSION': 'ops-session'
+}
+TRACKERS = {
+    'RED': RED_DETAILS,
+    'OPS': OPS_DETAILS
 }
