@@ -46,9 +46,12 @@ SearchReleaseData = namedtuple(
     "SearchReleaseData",
     ["lossless", "lossless_web", "year", "artist", "album", "release_type", "url"],
 )
+
+
 def validate_tracker(ctx, param, value):
     try:
-        return config.TRACKERS[value.upper()]
+        click.secho(f"Uploading to {config.TRACKERS[value.upper()]['SITE_URL']}")
+        return value.upper()
     except KeyError:
         raise click.BadParameter(f"{value} is not a tracker in your config.")
     except AttributeError:
@@ -57,9 +60,14 @@ def validate_tracker(ctx, param, value):
             + ", ".join(config.TRACKERS.keys())
         )
 
+
 class GazelleApi:
     def __init__(self, site_code):
-        tracker_details = config.TRACKERS[site_code]
+        print('oi')
+        tracker_details = config.TRACKERS[str(site_code)]
+        self.other_gazelle_sites = [*config.TRACKERS.keys()]
+        self.other_gazelle_sites.remove(str(site_code))
+
         self.headers = {
             "Connection": "keep-alive",
             "Cache-Control": "max-age=0",
@@ -73,6 +81,7 @@ class GazelleApi:
         self.cookie = tracker_details['SITE_SESSION']
         if 'SITE_API_KEY' in tracker_details.keys():
             self.api_key = tracker_details['SITE_API_KEY']
+
         self.session = requests.Session()
         self.session.headers.update(self.headers)
         self.last_rate_limit_expiry = time.time() - 10
@@ -187,12 +196,13 @@ class GazelleApi:
         """Attempt to upload a torrent to the site."""
         url = self.base_url + "/ajax.php?action=upload"
         data["auth"] = self.authkey
-        headers = self.headers
-        headers["Authorization"] = self.api_key
+        '''Shallow copy.
+        We don't want the future requests to send the api key.'''
+        api_key_headers = {**self.headers, "Authorization": self.api_key}
         resp = await loop.run_in_executor(
             None,
             lambda: self.session.post(
-                url, data=data, files=files, headers=self.headers
+                url, data=data, files=files, headers=api_key_headers
             ),
         )
         resp = resp.json()
@@ -227,7 +237,7 @@ class GazelleApi:
             raise RequestError(f"Upload failed, response text: {resp.text}")
 
     async def upload(self, data, files):
-        """Upload a torrent using upload.php rather than API. Needed if API Key not found."""
+        """Upload a torrent using upload.php or API key."""
         if hasattr(self, 'api_key'):
             return await self.api_key_upload(data, files)
         else:
@@ -280,5 +290,3 @@ def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
                 int(torrent_url[1])
             )
     return max(torrent_ids), group_id
-
-GAZELLE_API=GazelleApi('RED')

@@ -344,6 +344,14 @@ python-versions = "*"
 version = "1.7.0"
 
 [[package]]
+category = "main"
+description = "API rate limit decorator"
+name = "ratelimit"
+optional = false
+python-versions = "*"
+version = "2.2.1"
+
+[[package]]
 category = "dev"
 description = "Alternative regular expression module, to replace re."
 name = "regex"
@@ -436,7 +444,7 @@ python-versions = "*"
 version = "0.16.0"
 
 [metadata]
-content-hash = "2de204039c85fab2e500479e7947436d4f6601a160b94fd88ae18e570cbac13f"
+content-hash = "0174878afa8b9d19069b13a91efc8a697c545cd9f6ab62b468beebcf9063ba65"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -692,6 +700,9 @@ pyimgur = [
 ]
 pyperclip = [
     {file = "pyperclip-1.7.0.tar.gz", hash = "sha256:979325468ccf682104d5dcaf753f869868100631301d3e72f47babdea5700d1c"},
+]
+ratelimit = [
+    {file = "ratelimit-2.2.1.tar.gz", hash = "sha256:af8a9b64b821529aca09ebaf6d8d279100d766f19e90b5059ac6a718ca6dee42"},
 ]
 regex = [
     {file = "regex-2020.2.20-cp27-cp27m-win32.whl", hash = "sha256:99272d6b6a68c7ae4391908fc15f6b8c9a6c345a46b632d7fdb7ef6c883a2bbb"},

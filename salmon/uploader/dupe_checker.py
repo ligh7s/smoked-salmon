@@ -8,7 +8,7 @@ import click
 from salmon.common import RE_FEAT, make_searchstrs
 from salmon.errors import AbortAndDeleteFolder
 
-from salmon.gazelle import GazelleApi, RequestError
+from salmon.gazelle import RequestError
 
 loop = asyncio.get_event_loop()
 
@@ -93,12 +93,16 @@ def print_search_results(gazelle_site, results, searchstr):
     """Print all the site search results."""
     if not results:
         click.secho(
-            f'\nNo groups found on {gazelle_site.site_string} matching this release.', fg="green", nl=False
+            f'\nNo groups found on {gazelle_site.site_string} matching this release.',
+            fg="green",
+            nl=False
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
     else:
         click.secho(
-            f'\nResults matching this release were found on {gazelle_site.site_string}: ', fg="red", nl=False
+            f'\nResults matching this release were found on {gazelle_site.site_string}: ',
+            fg="red",
+            nl=False
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for r_index, r in enumerate(results):
@@ -121,8 +125,8 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
         group_id = click.prompt(
             click.style(
                 "\nWould you like to upload to an existing group?\n"
-                f'Either pick from above or paste a release group URL or [a]bort {"[d]elete folder " if offer_deletion else ""}'
-                f"(leave blank for a new group)",
+                "Either pick from releases found, paste a release group URL, leave blank for a new group,\n"
+                f'or [a]bort {", [d]elete folder " if offer_deletion else ""}',
                 fg="magenta",
                 bold=True,
             ),
