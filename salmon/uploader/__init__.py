@@ -11,7 +11,7 @@ from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 
-from salmon.gazelle import GazelleApi
+from salmon.gazelle import GazelleApi, validate_tracker
 
 from salmon.tagger import (
     metadata_validator_base,
@@ -95,7 +95,10 @@ loop = asyncio.get_event_loop()
     is_flag=True,
     help="Recompress flacs to the configured compression level before uploading.",
 )
-@click.option("--tracker", "-t", default=config.DEFAULT_TRACKER, help="Choose a tracker from Config.py")
+@click.option("--tracker", "-t",
+    default=config.DEFAULT_TRACKER,
+    callback=validate_tracker,
+    help=f'Tracker uploading to ({"/".join(config.TRACKERS.keys())})')
 def up(path, group_id, source, lossy, spectrals, overwrite, encoding, compress,tracker):
     """Upload an album folder to RED"""
     gazelle_site=GazelleApi(tracker)

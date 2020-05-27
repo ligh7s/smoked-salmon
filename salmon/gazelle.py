@@ -46,7 +46,16 @@ SearchReleaseData = namedtuple(
     "SearchReleaseData",
     ["lossless", "lossless_web", "year", "artist", "album", "release_type", "url"],
 )
-
+def validate_tracker(ctx, param, value):
+    try:
+        return config.TRACKERS[value.upper()]
+    except KeyError:
+        raise click.BadParameter(f"{value} is not a tracker in your config.")
+    except AttributeError:
+        raise click.BadParameter(
+            "This flag requires a tracker. Possible sources are: "
+            + ", ".join(config.TRACKERS.keys())
+        )
 
 class GazelleApi:
     def __init__(self, site_code):

@@ -35,5 +35,5 @@ SearchReleaseData = namedtuple(
     "SearchReleaseData",
     ["lossless", "lossless_web", "year", "artist", "album", "release_type", "url"],
 )
-
+#This is for plugins that have not been updated.
 RED_API = GazelleApi('RED')
