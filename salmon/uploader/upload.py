@@ -12,7 +12,7 @@ from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES, RELEASE_TYPES
 from salmon.images import upload_cover
 
-from salmon.gazelle import GazelleApi, RequestError
+from salmon.gazelle import RequestError
 
 
 from salmon.sources import SOURCE_ICONS
@@ -59,7 +59,13 @@ def prepare_and_upload(
 
 
 def report_lossy_master(
-    gazelle_site, torrent_id, spectral_urls, track_data, source, comment, source_url=None
+    gazelle_site,
+    torrent_id,
+    spectral_urls,
+    track_data,
+    source,
+    comment,
+    source_url=None
 ):
     """
     Generate the report description and call the function to report the torrent
@@ -155,7 +161,8 @@ def compile_data(
 def compile_data_for_group(
     path, group_id, metadata, track_data, hybrid, spectral_urls, lossy_comment
 ):
-    """Compile the data that needs to be submitted with an upload to an existing group."""
+    """Compile the data that needs to be submitted
+     with an upload to an existing group."""
     return {
         "submit": True,
         "type": 0,
@@ -182,7 +189,6 @@ def compile_files(path, torrent_file, metadata):
     of the .torrent and any log files.
     """
     files = []
-
     files.append(
         ("file_input", ("meowmeow.torrent", torrent_file, "application/octet-stream"))
     )
@@ -210,7 +216,8 @@ def generate_torrent(gazelle_site, path):
     t = Torrent(path, trackers=[gazelle_site.announce],
                 private=True, source=gazelle_site.site_string)
     t.generate()
-    tpath = os.path.join(tempfile.gettempdir(), f"{os.path.basename(path)}.torrent")
+    tpath = os.path.join(tempfile.gettempdir(),
+                         f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent")
     with open(tpath, "wb") as tf:
         t.save(tf)
     click.secho(" done!", fg="yellow")

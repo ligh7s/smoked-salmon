@@ -50,6 +50,8 @@ SearchReleaseData = namedtuple(
 
 def validate_tracker(ctx, param, value):
     try:
+        if not value:
+            return False
         click.secho(f"Uploading to {config.TRACKERS[value.upper()]['SITE_URL']}")
         return value.upper()
     except KeyError:
@@ -63,10 +65,7 @@ def validate_tracker(ctx, param, value):
 
 class GazelleApi:
     def __init__(self, site_code):
-        print('oi')
         tracker_details = config.TRACKERS[str(site_code)]
-        self.other_gazelle_sites = [*config.TRACKERS.keys()]
-        self.other_gazelle_sites.remove(str(site_code))
 
         self.headers = {
             "Connection": "keep-alive",
@@ -74,7 +73,7 @@ class GazelleApi:
             "User-Agent": config.USER_AGENT,
 
         }
-
+        self.site_code = site_code
         self.base_url = tracker_details['SITE_URL']
         self.tracker_url = tracker_details['TRACKER_URL']
         self.site_string = tracker_details['SITE_STRING']

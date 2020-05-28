@@ -96,9 +96,8 @@ loop = asyncio.get_event_loop()
     help="Recompress flacs to the configured compression level before uploading.",
 )
 @click.option("--tracker", "-t",
-              default=config.DEFAULT_TRACKER,
               callback=validate_tracker,
-              help=f'Tracker uploading to ({"/".join(config.TRACKERS.keys())})')
+              help=f'Uploading Choices: ({"/".join(config.TRACKERS.keys())})')
 def up(
         path,
         group_id,
@@ -106,8 +105,14 @@ def up(
         spectrals, overwrite,
         encoding, compress,
         tracker):
-    """Upload an album folder to RED"""
+    """Upload an album folder to Gazelle Site"""
+
+    
+    if not tracker:
+        tracker = choose_tracker(list(config.TRACKERS.keys()), True)
+    
     gazelle_site = GazelleApi(tracker)
+    click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
     print_preassumptions(gazelle_site, path, group_id,
                          source, lossy, spectrals, encoding)
     upload(
@@ -139,7 +144,6 @@ def upload(
 ):
     """Upload an album folder to Gazelle Site"""
     path = os.path.abspath(path)
-
     if not source:
         source = _prompt_source()
     audio_info = gather_audio_info(path)
@@ -188,37 +192,79 @@ def upload(
     spectrals_path = os.path.join(path, "Spectrals")
     spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
 
-    torrent_id, group_id = prepare_and_upload(
-        gazelle_site,
-        path,
-        group_id,
-        metadata,
-        track_data,
-        hybrid,
-        lossy_master,
-        spectral_urls,
-        lossy_comment,
-    )
-    if lossy_master:
-        report_lossy_master(
+    remaining_gazelle_sites = list(config.TRACKERS.keys())
+    tracker=gazelle_site.site_code
+    while True:
+        # Loop until we don't want to upload to any more sites.
+        if not tracker:
+            tracker = choose_tracker(remaining_gazelle_sites)
+            click.secho(f"Uploading to {config.TRACKERS[tracker]['SITE_URL']}", fg="cyan")
+            gazelle_site = GazelleApi(tracker)
+            group_id = check_existing_group(gazelle_site, searchstrs, metadata)
+
+        remaining_gazelle_sites.remove(tracker)
+
+        torrent_id, group_id = prepare_and_upload(
             gazelle_site,
-            torrent_id,
-            spectral_urls,
+            path,
+            group_id,
+            metadata,
             track_data,
-            source,
+            hybrid,
+            lossy_master,
+            spectral_urls,
             lossy_comment,
-            source_url=source_url,
         )
+        if lossy_master:
+            report_lossy_master(
+                gazelle_site,
+                torrent_id,
+                spectral_urls,
+                track_data,
+                source,
+                lossy_comment,
+                source_url=source_url,
+            )
 
-    url = f"{gazelle_site.base_url}/torrents.php?id={group_id}&torrentid={torrent_id}"
-    click.secho(
-        f"\nSuccessfully uploaded {url} ({os.path.basename(path)}).",
-        fg="green",
-        bold=True,
-    )
+        url = "{}/torrents.php?id={}&torrentid={}".format(
+            gazelle_site.base_url, group_id, torrent_id)
+        click.secho(
+            f"\nSuccessfully uploaded {url} ({os.path.basename(path)}).",
+            fg="green",
+            bold=True,
+        )
+        if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
+            pyperclip.copy(url)
+        tracker = None
+        if not remaining_gazelle_sites:
+            return click.secho(f"\nDone uploading this release.", fg="red")
 
-    if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
-        pyperclip.copy(url)
+
+def choose_tracker(choices, first_time=False):
+    while True:
+        # Loop until we have chosen a tracker or aborted.
+        if first_time:
+            if config.DEFAULT_TRACKER:
+                return config.DEFAULT_TRACKER
+            question = 'Which tracker would you like to upload to? '
+        else:
+            question = 'Would you like to upload to another tracker? '
+        tracker_choice = click.prompt(
+            click.style(question + f'Your choices are {" , ".join(choices)} '
+                        'or [a]bort.',
+                        fg="magenta", bold=True
+                        ),
+            default=choices[0],
+        )
+        if tracker_choice.strip().isdigit():
+            tracker_choice = int(tracker_choice.strip())
+            if tracker_choice < len(choices):
+                return choices[tracker_choice]
+        elif tracker_choice.strip().upper() in choices:
+            return tracker_choice
+        elif tracker_choice.lower().startswith("a"):
+            click.secho(f"\nDone with this release.", fg="red")
+            raise click.Abort
 
 
 def edit_metadata(path, tags, metadata, source, rls_data, recompress):
