@@ -63,7 +63,7 @@ class GazelleApi:
         self.site_string = tracker_details['SITE_STRING']
         self.cookie = tracker_details['SITE_SESSION']
         if 'SITE_API_KEY' in tracker_details.keys():
-           self.api_key = self.headers["Authorization"] = tracker_details['SITE_API_KEY']
+           self.api_key = tracker_details['SITE_API_KEY']
         self.session = requests.Session()
         self.session.headers.update(self.headers)
         self.last_rate_limit_expiry = time.time() - 10
@@ -86,6 +86,8 @@ class GazelleApi:
             raise LoginError
         self.authkey = acctinfo["authkey"]
         self.passkey = acctinfo["passkey"]
+    
+    
 
     @sleep_and_retry
     @limits(5, 10)
@@ -177,6 +179,8 @@ class GazelleApi:
         """Attempt to upload a torrent to the site."""
         url = self.base_url + "/ajax.php?action=upload"
         data["auth"] = self.authkey
+        headers=self.headers
+        headers["Authorization"] = self.api_key
         resp = await loop.run_in_executor(
             None,
             lambda: self.session.post(
@@ -188,7 +192,6 @@ class GazelleApi:
         if resp["status"] != "success":
             raise RequestError(f"Upload failed: {resp['error']}")
         elif resp["status"] == "success":
-            print(resp)
             return resp["response"]["torrentid"], resp["response"]["groupid"]
 
     async def site_page_upload(self, data, files):
@@ -209,7 +212,6 @@ class GazelleApi:
                 raise RequestError(f"Upload failed: {match[1]} ({resp.status_code})")
 
         try:
-            print(resp.url)
             return parse_most_recent_torrent_and_group_id_from_group_page(
                 resp.url, resp.text
             )
@@ -257,16 +259,18 @@ def compile_artists(artists, release_type):
 
 def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
     """
-    Given the JSON response from a successful upload, find the most
+    Given the HTML (ew) response from a successful upload, find the most
     recently uploaded torrent (it better be ours).
     """
     group_id = int(re.search(r"\?id=(\d+)", url)[1])
     torrent_ids = []
     soup = BeautifulSoup(text, "html.parser")
-    for pl in soup.select(".tooltip.button_pl"):
-        torrent_ids.append(
-            int(re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])[1])
-        )
+    for pl in soup.find_all("a", class_="tooltip"):
+        torrent_url=re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
+        if torrent_url:
+            torrent_ids.append(
+                int(torrent_url[1])
+            )
     return max(torrent_ids), group_id
 
 
