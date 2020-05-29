@@ -8,7 +8,8 @@ DOWNLOAD_QUEUE_FOLDER = '/path/to/folder/for/the/queue'
 PTPIMG_KEY = 'ptpimg-key'
 DISCOGS_TOKEN = 'discogs-token'
 
-#If a default tracker is not set you will be prompted to choose.
+'''If a default tracker is not set and you have more than one tracker in TRACKERS
+then you will be prompted to choose each time you use the script.'''
 DEFAULT_TRACKER = 'RED'
 
 RED_DETAILS = {
@@ -16,7 +17,7 @@ RED_DETAILS = {
     'TRACKER_URL': 'https://flacsfor.me',
     'SITE_STRING': 'RED',
     'SITE_SESSION': 'red-session',
-    'SITE_API_KEY': 'red-api-key-needs-uploading-privileges'
+    'SITE_API_KEY': 'red-api-key-needs-uploading-privileges' #OPTIONAL FOR NOW
 }
 OPS_DETAILS = {
     'SITE_URL': 'https://orpheus.network',
@@ -24,6 +25,7 @@ OPS_DETAILS = {
     'SITE_STRING': 'OPS',
     'SITE_SESSION': 'ops-session'
 }
+
 TRACKERS = {
     'RED': RED_DETAILS,
     'OPS': OPS_DETAILS

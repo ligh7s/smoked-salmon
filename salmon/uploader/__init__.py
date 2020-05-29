@@ -244,25 +244,35 @@ def choose_tracker(choices, first_time=False):
     while True:
         # Loop until we have chosen a tracker or aborted.
         if first_time:
+            if len(choices) is 1:
+                return choices[0]
             if config.DEFAULT_TRACKER:
                 return config.DEFAULT_TRACKER
             question = 'Which tracker would you like to upload to? '
         else:
             question = 'Would you like to upload to another tracker? '
-        tracker_choice = click.prompt(
+        tracker_input = click.prompt(
             click.style(question + f'Your choices are {" , ".join(choices)} '
                         'or [a]bort.',
                         fg="magenta", bold=True
                         ),
             default=choices[0],
         )
-        if tracker_choice.strip().isdigit():
-            tracker_choice = int(tracker_choice.strip())
-            if tracker_choice < len(choices):
-                return choices[tracker_choice]
-        elif tracker_choice.strip().upper() in choices:
-            return tracker_choice
-        elif tracker_choice.lower().startswith("a"):
+        tracker_input=tracker_input.strip()
+        #Input of a number is taken to be picking from the list.
+        if tracker_input.isdigit():
+            tracker_input = int(tracker_input)
+            if tracker_input <= len(choices):
+                return choices[tracker_input-1]
+        tracker_input=tracker_input.upper()
+        if tracker_input in choices:
+            return tracker_input
+        #this art allows input of the trackers first letter
+        elif tracker_input in [choice[0] for choice in choices]:
+            for choice in choices:
+                if tracker_input == choice[0]:
+                    return choice
+        elif tracker_input.lower().startswith("a"):
             click.secho(f"\nDone with this release.", fg="red")
             raise click.Abort
 
