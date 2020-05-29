@@ -242,7 +242,7 @@ class GazelleApi:
         else:
             return await self.site_page_upload(data, files)
 
-    async def report_lossy_master(self, torrent_id, comment, type_="lossywebapproval"):
+    async def report_lossy_master(self, torrent_id, comment, type_="lossyapproval"):
         """Automagically report a torrent for lossy master/web approval."""
         url = self.base_url + "/reportsv2.php"
         params = {"action": "takereport"}
