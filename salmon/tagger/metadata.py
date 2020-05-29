@@ -192,9 +192,12 @@ def clean_metadata(metadata):
                     if i in {"guest", "remixer"}
                 }
                 if re_strip(artist) in guest_artists and importance == "main":
-                    metadata["tracks"][disc][num]["artists"].remove(
-                        (artist, importance)
-                    )
+                    if sum('main' in item for item in metadata["tracks"][disc][num]["artists"]) == 1:
+                        pass
+                    else:
+                        metadata["tracks"][disc][num]["artists"].remove(
+                            (artist, importance)
+                        )
 
     if metadata["catno"] and metadata["catno"].replace(" ", "") == str(metadata["upc"]):
         metadata["catno"] = None

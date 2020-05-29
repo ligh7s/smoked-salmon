@@ -55,7 +55,8 @@ class Scraper(JunodownloadBase, MetadataMixin):
 
     def parse_release_catno(self, soup):
         try:
-            return soup.select("")[0].string.strip()
+            catblob = soup.find_all('div', attrs = { 'class': 'mb-3' } )[1]
+            return catblob.find('strong', text = 'Cat:').next_sibling.strip().replace(" ", "")
         except IndexError as e:
             raise ScrapeError("Could not parse catalog number.") from e
 
@@ -70,9 +71,11 @@ class Scraper(JunodownloadBase, MetadataMixin):
     def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         cur_disc = 1
-        for track in soup.select("#product_tracklist tbody tr .col-title"):
+        for track in soup.find_all('div', attrs = { 'class': 'row gutters-sm align-items-center product-tracklist-track'} ):
             try:
-                num, title = [t.strip() for t in track.text.split(".", 1)]
+                num = track.text.strip().split(".", 1)[0]
+                tobj = track.find('div', attrs = { 'class': 'col track-title'})
+                title = tobj.find('a').text
                 tracks[str(cur_disc)][num] = self.generate_track(
                     trackno=(num),
                     discno=cur_disc,
