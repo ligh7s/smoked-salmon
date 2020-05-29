@@ -107,10 +107,9 @@ def up(
         tracker):
     """Upload an album folder to Gazelle Site"""
 
-    
     if not tracker:
         tracker = choose_tracker(list(config.TRACKERS.keys()), True)
-    
+
     gazelle_site = GazelleApi(tracker)
     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
     print_preassumptions(gazelle_site, path, group_id,
@@ -193,12 +192,13 @@ def upload(
     spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
 
     remaining_gazelle_sites = list(config.TRACKERS.keys())
-    tracker=gazelle_site.site_code
+    tracker = gazelle_site.site_code
     while True:
         # Loop until we don't want to upload to any more sites.
         if not tracker:
             tracker = choose_tracker(remaining_gazelle_sites)
-            click.secho(f"Uploading to {config.TRACKERS[tracker]['SITE_URL']}", fg="cyan")
+            click.secho(
+                f"Uploading to {config.TRACKERS[tracker]['SITE_URL']}", fg="cyan")
             gazelle_site = GazelleApi(tracker)
             group_id = check_existing_group(gazelle_site, searchstrs, metadata)
 
@@ -244,7 +244,7 @@ def choose_tracker(choices, first_time=False):
     while True:
         # Loop until we have chosen a tracker or aborted.
         if first_time:
-            if len(choices) is 1:
+            if len(choices) == 1:
                 return choices[0]
             if config.DEFAULT_TRACKER:
                 return config.DEFAULT_TRACKER
@@ -258,16 +258,16 @@ def choose_tracker(choices, first_time=False):
                         ),
             default=choices[0],
         )
-        tracker_input=tracker_input.strip()
-        #Input of a number is taken to be picking from the list.
+        tracker_input = tracker_input.strip()
+        # Input of a number is taken to be picking from the list.
         if tracker_input.isdigit():
             tracker_input = int(tracker_input)
             if tracker_input <= len(choices):
-                return choices[tracker_input-1]
-        tracker_input=tracker_input.upper()
+                return choices[tracker_input - 1]
+        tracker_input = tracker_input.upper()
         if tracker_input in choices:
             return tracker_input
-        #this art allows input of the trackers first letter
+        # this part allows input of the trackers first letter
         elif tracker_input in [choice[0] for choice in choices]:
             for choice in choices:
                 if tracker_input == choice[0]:
