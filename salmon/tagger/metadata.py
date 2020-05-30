@@ -161,6 +161,7 @@ def _print_metadata(metadata, metadata_name="Pending"):
     click.echo(f"> EDITION TITLE : {metadata['edition_title']}")
     click.echo(f"> LABEL         : {metadata['label']}")
     click.echo(f"> CATNO         : {metadata['catno']}")
+    click.echo(f"> UPC           : {metadata['upc']}")
     click.echo(f"> GENRES        : {'; '.join(metadata['genres'])}")
     click.echo(f"> RELEASE TYPE  : {metadata['rls_type']}")
     click.echo(f"> COMMENT       : {metadata['comment']}")
@@ -192,9 +193,12 @@ def clean_metadata(metadata):
                     if i in {"guest", "remixer"}
                 }
                 if re_strip(artist) in guest_artists and importance == "main":
-                    metadata["tracks"][disc][num]["artists"].remove(
-                        (artist, importance)
-                    )
+                    if sum('main' in item for item in metadata["tracks"][disc][num]["artists"]) == 1:
+                        pass
+                    else:
+                        metadata["tracks"][disc][num]["artists"].remove(
+                            (artist, importance)
+                        )
 
     if metadata["catno"] and metadata["catno"].replace(" ", "") == str(metadata["upc"]):
         metadata["catno"] = None
