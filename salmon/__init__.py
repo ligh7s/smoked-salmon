@@ -40,6 +40,7 @@ DEFAULT_VALUES = {
     "WEB_STATIC_ROOT_URL": "/static",
     "COMPRESS_SPECTRALS": False,
     "LMA_COMMENT_IN_T_DESC": False,
+    "USE_UPC_AS_CATNO":True,
     "DEFAULT_TRACKER":False
 }
 
