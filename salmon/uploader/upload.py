@@ -71,7 +71,9 @@ def report_lossy_master(
     Generate the report description and call the function to report the torrent
     for lossy master approval. Use LWA if the torrent is web, otherwise LMA.
     """
-    type_ = "lossywebapproval" if source == "WEB" else "lossyapproval"
+    #type_ = "lossywebapproval" if source == "WEB" else "lossyapproval"
+    #^This doesn't work on OPS and makes little difference on RED
+    type_ = "lossyapproval"
     filenames = list(track_data.keys())
     comment = _add_spectral_links_to_lossy_comment(
         comment, source_url, spectral_urls, filenames
