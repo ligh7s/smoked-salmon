@@ -161,6 +161,7 @@ def _print_metadata(metadata, metadata_name="Pending"):
     click.echo(f"> EDITION TITLE : {metadata['edition_title']}")
     click.echo(f"> LABEL         : {metadata['label']}")
     click.echo(f"> CATNO         : {metadata['catno']}")
+    click.echo(f"> UPC           : {metadata['upc']}")
     click.echo(f"> GENRES        : {'; '.join(metadata['genres'])}")
     click.echo(f"> RELEASE TYPE  : {metadata['rls_type']}")
     click.echo(f"> COMMENT       : {metadata['comment']}")

@@ -31,11 +31,11 @@ def prepare_and_upload(
     """Wrapper function for all the data compiling and processing."""
     if not group_id:
         cover_url = upload_cover(path)
-        data = compile_data(
+        data = compile_data_new_group(
             path, metadata, track_data, hybrid, cover_url, spectral_urls, lossy_comment
         )
     else:
-        data = compile_data_for_group(
+        data = compile_data_existing_group(
             path, group_id, metadata, track_data, hybrid, spectral_urls, lossy_comment
         )
 
@@ -111,13 +111,17 @@ def concat_track_data(tags, audio_info):
     return track_data
 
 
-def compile_data(
+def compile_data_new_group(
     path, metadata, track_data, hybrid, cover_url, spectral_urls, lossy_comment
 ):
     """
     Compile the data dictionary that needs to be submitted with a brand new
     torrent group upload POST.
     """
+    catno=metadata["catno"]
+    if config.USE_UPC_AS_CATNO:
+        if not metadata["catno"]:
+            catno=metadata["upc"] 
     return {
         "submit": True,
         "type": 0,
@@ -126,13 +130,13 @@ def compile_data(
         "importance[]": [ARTIST_IMPORTANCES[a[1]] for a in metadata["artists"]],
         "year": metadata["group_year"],
         "record_label": metadata["label"],
-        "catalogue_number": metadata["catno"],
+        "catalogue_number": catno,
         "releasetype": RELEASE_TYPES[metadata["rls_type"]],
         "remaster": True,
         "remaster_year": metadata["year"],
         "remaster_title": metadata["edition_title"],
         "remaster_record_label": metadata["label"],
-        "remaster_catalogue_number": metadata["catno"],
+        "remaster_catalogue_number": catno,
         "format": metadata["format"],
         "bitrate": metadata["encoding"],
         "other_bitrate": None,
@@ -147,10 +151,15 @@ def compile_data(
     }
 
 
-def compile_data_for_group(
+def compile_data_existing_group(
     path, group_id, metadata, track_data, hybrid, spectral_urls, lossy_comment
 ):
-    """Compile the data that needs to be submitted with an upload to an existing group."""
+    """Compile the data that needs to be submitted
+     with an upload to an existing group."""
+    catno=metadata["catno"]
+    if config.USE_UPC_AS_CATNO:
+        if not metadata["catno"]:
+            catno=metadata["upc"]            
     return {
         "submit": True,
         "type": 0,
@@ -159,7 +168,7 @@ def compile_data_for_group(
         "remaster_year": metadata["year"],
         "remaster_title": metadata["edition_title"],
         "remaster_record_label": metadata["label"],
-        "remaster_catalogue_number": metadata["catno"],
+        "remaster_catalogue_number": catno,
         "format": metadata["format"],
         "bitrate": metadata["encoding"],
         "other_bitrate": None,
