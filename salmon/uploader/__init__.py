@@ -11,7 +11,7 @@ from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 
-from salmon.gazelle import GazelleApi, validate_tracker
+from salmon.gazelle import GazelleApi, validate_tracker, choose_tracker_first_time, choose_tracker
 
 from salmon.tagger import (
     metadata_validator_base,
@@ -108,8 +108,7 @@ def up(
     """Upload an album folder to Gazelle Site"""
 
     if not tracker:
-        tracker = choose_tracker(list(config.TRACKERS.keys()), True)
-
+        tracker = choose_tracker_first_time()
     gazelle_site = GazelleApi(tracker)
     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
     print_preassumptions(gazelle_site, path, group_id,
@@ -196,10 +195,15 @@ def upload(
     while True:
         # Loop until we don't want to upload to any more sites.
         if not tracker:
+            click.secho("Would you like to upload to another tracker? ",
+                        fg="magenta", nl=False)
             tracker = choose_tracker(remaining_gazelle_sites)
             click.secho(
                 f"Uploading to {config.TRACKERS[tracker]['SITE_URL']}", fg="cyan")
             gazelle_site = GazelleApi(tracker)
+            searchstrs = generate_dupe_check_searchstrs(
+                rls_data["artists"], rls_data["title"], rls_data["catno"]
+            )
             group_id = check_existing_group(gazelle_site, searchstrs, metadata)
 
         remaining_gazelle_sites.remove(tracker)
@@ -238,43 +242,6 @@ def upload(
         tracker = None
         if not remaining_gazelle_sites:
             return click.secho(f"\nDone uploading this release.", fg="red")
-
-
-def choose_tracker(choices, first_time=False):
-    while True:
-        # Loop until we have chosen a tracker or aborted.
-        if first_time:
-            if len(choices) == 1:
-                return choices[0]
-            if config.DEFAULT_TRACKER:
-                return config.DEFAULT_TRACKER
-            question = 'Which tracker would you like to upload to? '
-        else:
-            question = 'Would you like to upload to another tracker? '
-        tracker_input = click.prompt(
-            click.style(question + f'Your choices are {" , ".join(choices)} '
-                        'or [a]bort.',
-                        fg="magenta", bold=True
-                        ),
-            default=choices[0],
-        )
-        tracker_input = tracker_input.strip()
-        # Input of a number is taken to be picking from the list.
-        if tracker_input.isdigit():
-            tracker_input = int(tracker_input)
-            if tracker_input <= len(choices):
-                return choices[tracker_input - 1]
-        tracker_input = tracker_input.upper()
-        if tracker_input in choices:
-            return tracker_input
-        # this part allows input of the trackers first letter
-        elif tracker_input in [choice[0] for choice in choices]:
-            for choice in choices:
-                if tracker_input == choice[0]:
-                    return choice
-        elif tracker_input.lower().startswith("a"):
-            click.secho(f"\nDone with this release.", fg="red")
-            raise click.Abort
 
 
 def edit_metadata(path, tags, metadata, source, rls_data, recompress):
