@@ -192,7 +192,6 @@ class GazelleApi:
             return []
         all_results=first_request['results']
         for i in range(1,max(3,pages)):
-            print(i)
             new_results = await self.request("browse", remasterrecordlabel=label,page=str(i))
             all_results += new_results['results']
             
