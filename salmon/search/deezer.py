@@ -68,7 +68,6 @@ class Searcher(DeezerBase, SearchMixin):
         albums = []
         i = 0
         while i < maximum or maximum == 0:
-            print(i)
             i += 25
             for rls in resp["data"]:
                 album = await self.get_json(f"/album/{rls['id']}")
