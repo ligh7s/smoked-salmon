@@ -21,6 +21,8 @@ from salmon.errors import (
     RequestFailedError,
 )
 
+
+
 loop = asyncio.get_event_loop()
 
 ARTIST_TYPES = [
@@ -48,19 +50,6 @@ SearchReleaseData = namedtuple(
 )
 
 
-def validate_tracker(ctx, param, value):
-    try:
-        if not value:
-            return False
-        click.secho(f"Uploading to {config.TRACKERS[value.upper()]['SITE_URL']}")
-        return value.upper()
-    except KeyError:
-        raise click.BadParameter(f"{value} is not a tracker in your config.")
-    except AttributeError:
-        raise click.BadParameter(
-            "This flag requires a tracker. Possible sources are: "
-            + ", ".join(config.TRACKERS.keys())
-        )
 
 
 class GazelleApi:
@@ -190,6 +179,52 @@ class GazelleApi:
         releases = list({r.url: r for r in releases}.values())  # Dedupe
 
         return resp["id"], releases
+        
+    async def label_rls(self, label):
+        """
+        Get all the torrent groups from a label on site.
+        All groups without a FLAC will be highlighted.
+        """
+        first_request = await self.request("browse", remasterrecordlabel=label)
+        if 'pages' in first_request.keys():
+            pages = first_request['pages']
+        else:
+            return []
+        all_results=first_request['results']
+        for i in range(1,max(3,pages)):
+            print(i)
+            new_results = await self.request("browse", remasterrecordlabel=label,page=str(i))
+            all_results += new_results['results']
+            
+        resp2= await self.request("browse", recordlabel=label)
+        all_results=all_results+resp2["results"]
+        releases = []
+        for group in all_results:
+            if not group["artist"]:
+                artist=html.unescape(
+                    compile_artists(group["artists"], group["releaseType"])
+                    )
+            else:
+                artist=group["artist"]
+            releases.append(
+                SearchReleaseData(
+                    lossless=any(t["format"] == "FLAC" for t in group["torrents"]),
+                    lossless_web=any(
+                        t["format"] == "FLAC" and t["media"] == "WEB"
+                        for t in group["torrents"]
+                    ),
+                    year=group["groupYear"],
+                    artist=artist,
+                    album=html.unescape(group["groupName"]),
+                    release_type=group["releaseType"],
+                    url=f'{self.base_url}/torrents.php?id={group["groupId"]}',
+                )
+            )
+
+        releases = list({r.url: r for r in releases}.values())  # Dedupe
+
+        return  releases
+
 
     async def api_key_upload(self, data, files):
         """Attempt to upload a torrent to the site."""
@@ -206,10 +241,14 @@ class GazelleApi:
         )
         resp = resp.json()
         # print(resp) debug
-        if resp["status"] != "success":
-            raise RequestError(f"Upload failed: {resp['error']}")
-        elif resp["status"] == "success":
-            return resp["response"]["torrentid"], resp["response"]["groupid"]
+        try:
+            if resp["status"] != "success":
+                raise RequestError(f"Upload failed: {resp['error']}")
+            elif resp["status"] == "success":
+                return resp["response"]["torrentid"], resp["response"]["groupid"]
+        except TypeError:
+            raise RequestError(f"Upload failed, response text: {resp.text}")
+        
 
     async def site_page_upload(self, data, files):
         url = self.base_url + "/upload.php"
@@ -289,3 +328,56 @@ def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
                 int(torrent_url[1])
             )
     return max(torrent_ids), group_id
+
+def choose_tracker(choices, first_time=False,question=False):
+    while True:
+        # Loop until we have chosen a tracker or aborted.
+        if first_time:
+            if len(choices) == 1:
+                click.secho(f"Using tracker: {config.TRACKERS[choices[0]]['SITE_URL']}")
+                return choices[0]
+            if config.DEFAULT_TRACKER:
+                click.secho(f"Using tracker: {config.TRACKERS[config.DEFAULT_TRACKER]['SITE_URL']}")
+                return config.DEFAULT_TRACKER
+            if question:
+                click.secho(question, fg="magenta",bold=True,)
+        
+        tracker_input = click.prompt(
+            click.style(f'Your choices are {" , ".join(choices)} '
+                        'or [a]bort.',
+                        fg="magenta", bold=True
+                        ),
+            default=choices[0],
+        )
+        tracker_input = tracker_input.strip().upper()
+        if tracker_input in choices:
+            return tracker_input
+        # this part allows input of the trackers first letter
+        elif tracker_input in [choice[0] for choice in choices]:
+            for choice in choices:
+                if tracker_input == choice[0]:
+                    return choice
+        elif tracker_input.lower().startswith("a"):
+            click.secho(f"\nDone with this release.", fg="red")
+            raise click.Abort
+
+def choose_tracker_first_time(question="Which tracker would you like to upload to?"):
+    return choose_tracker(list(config.TRACKERS.keys()), True, question)
+
+def validate_tracker(ctx, param, value):
+    try:
+        #this doesn't work because click requires an argument
+        if not value:
+            return False
+        else:
+            tracker=list(config.TRACKERS.keys())
+        click.secho(f"Using tracker: {config.TRACKERS[value.upper()]['SITE_URL']}")
+        return value.upper()
+    except KeyError:
+        click.secho(f"{value} is not a tracker in your config.")
+        return choose_tracker(list(config.TRACKERS.keys()))
+    except AttributeError:
+        raise click.BadParameter(
+            "This flag requires a tracker. Possible sources are: "
+            + ", ".join(config.TRACKERS.keys())
+        )
