@@ -53,7 +53,7 @@ SearchReleaseData = namedtuple(
 
 
 class GazelleApi:
-    def __init__(self, site_code):
+    def __init__(self,site_code):
         tracker_details = config.TRACKERS[str(site_code)]
 
         self.headers = {
