@@ -103,7 +103,7 @@ def parse_title(title, track):
             flags=re.IGNORECASE,
         )
         .strip()
-        .rstrip(")")
+        #.rstrip(")") Why was this here?
     )
 
 
