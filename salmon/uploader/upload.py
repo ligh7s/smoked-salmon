@@ -12,7 +12,7 @@ from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES, RELEASE_TYPES
 from salmon.images import upload_cover
 
-from salmon.gazelle import RequestError
+from salmon.errors import RequestError
 
 
 from salmon.sources import SOURCE_ICONS

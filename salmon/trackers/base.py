@@ -44,6 +44,7 @@ INVERTED_RELEASE_TYPES = {
 }
 
 
+
 SearchReleaseData = namedtuple(
     "SearchReleaseData",
     ["lossless", "lossless_web", "year", "artist", "album", "release_type", "url"],
@@ -52,7 +53,7 @@ SearchReleaseData = namedtuple(
 
 
 
-class GazelleApi:
+class BaseGazelleApi:
     def __init__(self,site_code):
         tracker_details = config.TRACKERS[str(site_code)]
 
@@ -72,8 +73,6 @@ class GazelleApi:
 
         self.session = requests.Session()
         self.session.headers.update(self.headers)
-        self.last_rate_limit_expiry = time.time() - 10
-        self.cur_req_count = 0
 
         self.authkey = None
         self.passkey = None
@@ -108,7 +107,6 @@ class GazelleApi:
         url = self.base_url + "/ajax.php"
         params = {"action": action, **kwargs}
 
-        self.cur_req_count += 1
         try:
             resp = await loop.run_in_executor(
                 None,
@@ -328,55 +326,3 @@ def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
             )
     return max(torrent_ids), group_id
 
-def choose_tracker(choices, first_time=False,question=False):
-    while True:
-        # Loop until we have chosen a tracker or aborted.
-        if first_time:
-            if len(choices) == 1:
-                click.secho(f"Using tracker: {config.TRACKERS[choices[0]]['SITE_URL']}")
-                return choices[0]
-            if config.DEFAULT_TRACKER:
-                click.secho(f"Using tracker: {config.TRACKERS[config.DEFAULT_TRACKER]['SITE_URL']}")
-                return config.DEFAULT_TRACKER
-            if question:
-                click.secho(question, fg="magenta",bold=True,)
-        
-        tracker_input = click.prompt(
-            click.style(f'Your choices are {" , ".join(choices)} '
-                        'or [a]bort.',
-                        fg="magenta", bold=True
-                        ),
-            default=choices[0],
-        )
-        tracker_input = tracker_input.strip().upper()
-        if tracker_input in choices:
-            return tracker_input
-        # this part allows input of the trackers first letter
-        elif tracker_input in [choice[0] for choice in choices]:
-            for choice in choices:
-                if tracker_input == choice[0]:
-                    return choice
-        elif tracker_input.lower().startswith("a"):
-            click.secho(f"\nDone with this release.", fg="red")
-            raise click.Abort
-
-def choose_tracker_first_time(question="Which tracker would you like to upload to?"):
-    return choose_tracker(list(config.TRACKERS.keys()), True, question)
-
-def validate_tracker(ctx, param, value):
-    try:
-        #this doesn't work because click requires an argument
-        if not value:
-            return False
-        else:
-            tracker=list(config.TRACKERS.keys())
-        click.secho(f"Using tracker: {config.TRACKERS[value.upper()]['SITE_URL']}")
-        return value.upper()
-    except KeyError:
-        click.secho(f"{value} is not a tracker in your config.")
-        return choose_tracker(list(config.TRACKERS.keys()))
-    except AttributeError:
-        raise click.BadParameter(
-            "This flag requires a tracker. Possible sources are: "
-            + ", ".join(config.TRACKERS.keys())
-        )

@@ -8,7 +8,7 @@ import click
 from salmon.common import RE_FEAT, make_searchstrs
 from salmon.errors import AbortAndDeleteFolder
 
-from salmon.gazelle import RequestError
+from salmon.errors import RequestError
 
 loop = asyncio.get_event_loop()
 

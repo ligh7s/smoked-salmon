@@ -11,7 +11,7 @@ from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 
-from salmon.gazelle import GazelleApi, validate_tracker, choose_tracker_first_time, choose_tracker
+import salmon.trackers
 
 from salmon.tagger import (
     metadata_validator_base,
@@ -96,7 +96,7 @@ loop = asyncio.get_event_loop()
     help="Recompress flacs to the configured compression level before uploading.",
 )
 @click.option("--tracker", "-t",
-              callback=validate_tracker,
+              callback=salmon.trackers.validate_tracker,
               help=f'Uploading Choices: ({"/".join(config.TRACKERS.keys())})')
 def up(
         path,
@@ -108,8 +108,8 @@ def up(
     """Upload an album folder to Gazelle Site"""
 
     if not tracker:
-        tracker = choose_tracker_first_time()
-    gazelle_site = GazelleApi(tracker)
+        tracker = salmon.trackers.choose_tracker_first_time()
+    gazelle_site = salmon.trackers.get_class(tracker)()
     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
     print_preassumptions(gazelle_site, path, group_id,
                          source, lossy, spectrals, encoding)
@@ -197,10 +197,10 @@ def upload(
         if not tracker:
             click.secho("Would you like to upload to another tracker? ",
                         fg="magenta", nl=False)
-            tracker = choose_tracker(remaining_gazelle_sites)
-            click.secho(
-                f"Uploading to {config.TRACKERS[tracker]['SITE_URL']}", fg="cyan")
-            gazelle_site = GazelleApi(tracker)
+            tracker= salmon.trackers.choose_tracker(remaining_gazelle_sites)
+            gazelle_site = salmon.trackers.get_class(tracker)()
+
+            click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
             searchstrs = generate_dupe_check_searchstrs(
                 rls_data["artists"], rls_data["title"], rls_data["catno"]
             )
