@@ -13,19 +13,14 @@ then you will be prompted to choose each time you use the script.'''
 DEFAULT_TRACKER = 'RED'
 
 RED_DETAILS = {
-    'SITE_URL': 'https://redacted.ch',
-    'TRACKER_URL': 'https://flacsfor.me',
-    'SITE_STRING': 'RED',
     'SITE_SESSION': 'red-session',
     'SITE_API_KEY': 'red-api-key-needs-uploading-privileges' #OPTIONAL FOR NOW
 }
 OPS_DETAILS = {
-    'SITE_URL': 'https://orpheus.network',
-    'TRACKER_URL': 'https://home.opsfet.ch',
-    'SITE_STRING': 'OPS',
     'SITE_SESSION': 'ops-session'
 }
 
+#If you want to comment out one of these the script should totally ignore multi-tracker features.
 TRACKERS = {
     'RED': RED_DETAILS,
     'OPS': OPS_DETAILS
