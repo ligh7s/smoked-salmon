@@ -1,16 +1,18 @@
-from salmon.trackers.base import BaseGazelleApi
-
-
-from salmon import config
 import click
 import requests
+import asyncio
 from requests.exceptions import ConnectTimeout, ReadTimeout
+
+from salmon.trackers.base import BaseGazelleApi
+from salmon import config
 from salmon.errors import (
     LoginError,
     RateLimitError,
     RequestError,
     RequestFailedError,
 )#Do I understand imports?
+
+loop = asyncio.get_event_loop()
 
 class RedApi(BaseGazelleApi):
     def __init__(self):
@@ -45,7 +47,7 @@ class RedApi(BaseGazelleApi):
             "auth": self.authkey,
             "torrentid": torrent_id,
             "categoryid": 1,
-            "type": type_,
+            "type": 'lossywebapproval',
             "extra": comment,
             "submit": True,
         }
