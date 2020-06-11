@@ -44,7 +44,7 @@ class Scraper(JunodownloadBase, MetadataMixin):
         try:
             date = soup.select('span[itemprop="datePublished"]')[0].string.strip()
             return datetime.strptime(date, "%d %B, %Y").strftime("%Y-%m-%d")
-        except IndexError as e:
+        except (IndexError , AttributeError) as e:
             raise ScrapeError("Could not parse release date.") from e
 
     def parse_release_label(self, soup):
