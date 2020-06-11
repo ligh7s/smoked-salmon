@@ -35,6 +35,7 @@ from salmon.uploader.dupe_checker import (
     check_existing_group,
     generate_dupe_check_searchstrs,
 )
+from salmon.uploader.request_checker import check_requests
 from salmon.uploader.preassumptions import print_preassumptions
 from salmon.uploader.spectrals import (
     check_spectrals,
@@ -207,8 +208,8 @@ def upload(
             group_id = check_existing_group(gazelle_site, searchstrs, metadata)
 
         remaining_gazelle_sites.remove(tracker)
-
-        torrent_id, group_id = prepare_and_upload(
+        request_id=check_requests(gazelle_site,searchstrs,metadata)
+        torrent_id = prepare_and_upload(
             gazelle_site,
             path,
             group_id,
@@ -218,6 +219,7 @@ def upload(
             lossy_master,
             spectral_urls,
             lossy_comment,
+            request_id,
         )
         if lossy_master:
             report_lossy_master(
@@ -230,8 +232,8 @@ def upload(
                 source_url=source_url,
             )
 
-        url = "{}/torrents.php?id={}&torrentid={}".format(
-            gazelle_site.base_url, group_id, torrent_id)
+        url = "{}/torrents.php?torrentid={}".format(
+            gazelle_site.base_url, torrent_id)
         click.secho(
             f"\nSuccessfully uploaded {url} ({os.path.basename(path)}).",
             fg="green",
@@ -242,7 +244,6 @@ def upload(
         tracker = None
         if not remaining_gazelle_sites:
             return click.secho(f"\nDone uploading this release.", fg="red")
-
 
 def edit_metadata(path, tags, metadata, source, rls_data, recompress):
     """

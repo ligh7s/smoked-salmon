@@ -240,11 +240,14 @@ class BaseGazelleApi:
         # print(resp) debug
         try:
             if resp["status"] != "success":
-                raise RequestError(f"Upload failed: {resp['error']}")
+                raise RequestError(f"API upload failed: {resp['error']}")
             elif resp["status"] == "success":
-                return resp["response"]["torrentid"], resp["response"]["groupid"]
+                if 'requestid' in resp['response'].keys():
+                    click.secho("Filled request:"
+                    f"{self.base_url}/requests.php?action=view&id={resp['response']['requestid']}",fg="green")
+                return resp["response"]["torrentid"]
         except TypeError:
-            raise RequestError(f"Upload failed, response text: {resp.text}")
+            raise RequestError(f"API upload failed, response text: {resp.text}")
         
 
     async def site_page_upload(self, data, files):
@@ -262,14 +265,19 @@ class BaseGazelleApi:
                 r'<p style="color: red; text-align: center;">(.+)<\/p>', resp.text,
             )
             if match:
-                raise RequestError(f"Upload failed: {match[1]} ({resp.status_code})")
-
+                raise RequestError(f"Site upload failed: {match[1]} ({resp.status_code})")
+        if 'requests.php' in resp.url:
+            try:
+                click.secho(f"Filled request:{resp.url}",fg="green")
+                return parse_torrent_id_from_filled_request_page(resp.text)
+            except TypeError:
+                raise RequestError(f"Site upload failed, response text: {resp.text}")
         try:
             return parse_most_recent_torrent_and_group_id_from_group_page(
                 resp.url, resp.text
             )
         except TypeError:
-            raise RequestError(f"Upload failed, response text: {resp.text}")
+            raise RequestError(f"Site upload failed, response text: {resp.text}")
 
     async def upload(self, data, files):
         """Upload a torrent using upload.php or API key."""
@@ -315,7 +323,6 @@ def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
     Given the HTML (ew) response from a successful upload, find the most
     recently uploaded torrent (it better be ours).
     """
-    group_id = int(re.search(r"\?id=(\d+)", url)[1])
     torrent_ids = []
     soup = BeautifulSoup(text, "html.parser")
     for pl in soup.find_all("a", class_="tooltip"):
@@ -324,5 +331,19 @@ def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
             torrent_ids.append(
                 int(torrent_url[1])
             )
-    return max(torrent_ids), group_id
+    return max(torrent_ids)
 
+def parse_torrent_id_from_filled_request_page(text):
+    """
+    Given the HTML (ew) response from filling a request, 
+    find the filling torrent
+    """
+    torrent_ids = []
+    soup = BeautifulSoup(text, "html.parser")
+    for pl in soup.find_all("a", string="Yes"):
+        torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
+        if torrent_url:
+            torrent_ids.append(
+                int(torrent_url[1])
+            )
+    return max(torrent_ids)
