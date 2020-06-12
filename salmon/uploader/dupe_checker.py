@@ -125,8 +125,8 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
         group_id = click.prompt(
             click.style(
                 "\nWould you like to upload to an existing group?\n"
-                "Either pick from releases found, paste a release group URL, leave blank for a new group,\n"
-                f'or [a]bort {", [d]elete folder " if offer_deletion else ""}',
+                f"Paste a URL{', pick from groups found 'if results is not None else ''}"
+                f'or [N]ew group / [a]bort {"/ [d]elete folder " if offer_deletion else ""}',
                 fg="magenta",
                 bold=True,
             ),
@@ -151,7 +151,7 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
             raise click.Abort
         elif group_id.lower().startswith("d") and offer_deletion:
             raise AbortAndDeleteFolder
-        elif not group_id.strip():
+        elif group_id.lower().startswith("n") or not group_id.strip():
             click.echo(f"Uploading to a new torrent group.")
             return None
 
