@@ -16,21 +16,19 @@ loop = asyncio.get_event_loop()
 
 class RedApi(BaseGazelleApi):
     def __init__(self):
-        site_code='RED'
-        tracker_details = config.TRACKERS[site_code]
         self.headers = {
             "Connection": "keep-alive",
             "Cache-Control": "max-age=0",
             "User-Agent": config.USER_AGENT,
 
         }
-        self.site_code = site_code
+        self.site_code = 'RED'
         self.base_url = 'https://redacted.ch'
         self.tracker_url = 'https://flacsfor.me'
         self.site_string = 'RED'
-        self.cookie = tracker_details['SITE_SESSION']
-        if 'SITE_API_KEY' in tracker_details.keys():
-            self.api_key = tracker_details['SITE_API_KEY']
+        self.cookie = config.RED_SESSION
+        if config.RED_API_KEY:
+            self.api_key = config.RED_API_KEY
 
         self.session = requests.Session()
         self.session.headers.update(self.headers)

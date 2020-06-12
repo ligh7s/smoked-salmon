@@ -98,20 +98,26 @@ loop = asyncio.get_event_loop()
 )
 @click.option("--tracker", "-t",
               callback=salmon.trackers.validate_tracker,
-              help=f'Uploading Choices: ({"/".join(config.TRACKERS.keys())})')
+              help=f'Uploading Choices: ({"/".join(config.TRACKER_LIST)})')
+@click.option("--request", "-r",
+              default=None,
+              help=f'Pass a request URL or ID')
 def up(
         path,
         group_id,
         source, lossy,
         spectrals, overwrite,
         encoding, compress,
-        tracker):
+        tracker,
+        request):
     """Upload an album folder to Gazelle Site"""
 
     if not tracker:
         tracker = salmon.trackers.choose_tracker_first_time()
     gazelle_site = salmon.trackers.get_class(tracker)()
     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
+    if request:
+        request=salmon.trackers.validate_request(gazelle_site,request)
     print_preassumptions(gazelle_site, path, group_id,
                          source, lossy, spectrals, encoding)
     upload(
@@ -124,6 +130,7 @@ def up(
         encoding,
         overwrite_meta=overwrite,
         recompress=compress,
+        request_id=request,
     )
 
 
@@ -140,6 +147,7 @@ def upload(
     recompress=False,
     source_url=None,
     searchstrs=None,
+    request_id=None,
 ):
     """Upload an album folder to Gazelle Site"""
     path = os.path.abspath(path)
@@ -191,14 +199,14 @@ def upload(
     spectrals_path = os.path.join(path, "Spectrals")
     spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
 
-    remaining_gazelle_sites = list(config.TRACKERS.keys())
+    remaining_gazelle_sites = config.TRACKER_LIST
     tracker = gazelle_site.site_code
     while True:
         # Loop until we don't want to upload to any more sites.
         if not tracker:
             click.secho("Would you like to upload to another tracker? ",
                         fg="magenta", nl=False)
-            tracker= salmon.trackers.choose_tracker(remaining_gazelle_sites)
+            tracker = salmon.trackers.choose_tracker(remaining_gazelle_sites)
             gazelle_site = salmon.trackers.get_class(tracker)()
 
             click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
@@ -208,7 +216,8 @@ def upload(
             group_id = check_existing_group(gazelle_site, searchstrs, metadata)
 
         remaining_gazelle_sites.remove(tracker)
-        request_id=check_requests(gazelle_site,searchstrs,metadata)
+        if not request_id:
+            request_id = check_requests(gazelle_site, searchstrs, metadata)
         torrent_id = prepare_and_upload(
             gazelle_site,
             path,
@@ -242,8 +251,10 @@ def upload(
         if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
             pyperclip.copy(url)
         tracker = None
+        request_id = None
         if not remaining_gazelle_sites:
             return click.secho(f"\nDone uploading this release.", fg="red")
+
 
 def edit_metadata(path, tags, metadata, source, rls_data, recompress):
     """
@@ -292,9 +303,9 @@ def recheck_dupe(gazelle_site, searchstrs, metadata):
         or not searchstrs
         and new_searchstrs
     ):
-        click.secho('\nRechecking for dupes on', fg="cyan", bold=True, nl=False)
-        click.secho(gazelle_site.site_string, bold=True, nl=False)
-        click.secho('due to metadata changes...', bold=True)
+        click.secho(f'\nRechecking for dupes on {gazelle_site.site_string} '
+        'due to metadata changes...'
+        , fg="cyan", bold=True, nl=False)
         return check_existing_group(gazelle_site, new_searchstrs)
 
 

@@ -8,20 +8,10 @@ DOWNLOAD_QUEUE_FOLDER = '/path/to/folder/for/the/queue'
 PTPIMG_KEY = 'ptpimg-key'
 DISCOGS_TOKEN = 'discogs-token'
 
-'''If a default tracker is not set and you have more than one tracker in TRACKERS
+'''If a default tracker is not set and you have more than one tracker in TRACKER_LIST
 then you will be prompted to choose each time you use the script.'''
 DEFAULT_TRACKER = 'RED'
-
-RED_DETAILS = {
-    'SITE_SESSION': 'red-session',
-    'SITE_API_KEY': 'red-api-key-needs-uploading-privileges' #OPTIONAL FOR NOW
-}
-OPS_DETAILS = {
-    'SITE_SESSION': 'ops-session'
-}
-
-#If you want to comment out one of these the script should totally ignore multi-tracker features.
-TRACKERS = {
-    'RED': RED_DETAILS,
-    'OPS': OPS_DETAILS
-}
+RED_SESSION = 'get-from-site-cookie' #Required for now. (waiting on reports api support)
+OPS_SESSION = 'get-from-site-cookie'
+RED_API_KEY = 'red-api-key-needs-uploading-privileges' #Optional FOR NOW
+TRACKER_LIST=['RED','OPS'] #Remove one of these if you don't want multi-tracker support.

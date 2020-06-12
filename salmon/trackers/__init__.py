@@ -1,7 +1,9 @@
 
-from salmon import config
-import click
 
+import click
+from urllib import parse
+
+from salmon import config
 from salmon.trackers import  red, ops
 #hard coded as it needs to reflect the imports anyway.
 tracker_classes={
@@ -45,7 +47,7 @@ def choose_tracker(choices):
 def choose_tracker_first_time(question="Which tracker would you like to upload to?"):
     """Specific logic for the first time a tracker choice is offered.
     Uses default if there is one and uses only tracker if there is only one."""
-    choices=list(config.TRACKERS.keys())
+    choices=config.TRACKER_LIST
     if len(choices) == 1:
                 click.secho(f"Using tracker: {choices[0]}")
                 return choices[0]
@@ -63,14 +65,33 @@ def validate_tracker(ctx, param, value):
     try:
         if value is None:
             return choose_tracker_first_time()
-        if value.upper() in list(config.TRACKERS.keys()):
+        if value.upper() in config.TRACKER_LIST:
             click.secho(f"Using tracker: {value.upper()}",fg="magenta")
             return value.upper() 
         else:
             click.secho(f"{value} is not a tracker in your config.")
-            return choose_tracker(list(config.TRACKERS.keys()))
+            return choose_tracker(config.TRACKER_LIST)
     except AttributeError:
         raise click.BadParameter(
             "This flag requires a tracker. Possible sources are: "
-            + ", ".join(config.TRACKERS.keys())
+            + ", ".join(config.TRACKER_LIST)
+        )
+def validate_request(gazelle_site, request):
+    """Check the request given is a real WEB request.
+    Should it check more?
+    """
+    try:
+        if request is None:
+            return None
+        if request.strip().isdigit():
+            pass
+        elif request.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
+            request=parse.parse_qs(parse.urlparse(request).query)['id'][0]
+        click.secho(
+            f"Attempting to fill {gazelle_site.base_url}/requests.php?action=view&id={request}"
+            ,fg="green")
+        return request
+    except (KeyError, AttributeError):
+        raise click.BadParameter(
+            "This flag requires a request, either as a url or ID"
         )

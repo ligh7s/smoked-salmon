@@ -18,13 +18,12 @@ loop = asyncio.get_event_loop()
 
 def check_requests(gazelle_site, searchstrs,metadata):
     """
-    Make a request to the API with a dupe-check searchstr,
-    then have the user validate that the torrent does not match
-    anything on site.
+    Search for requests on site and offer a choice to fill one.
     """
     results = get_request_results(gazelle_site, searchstrs)
     print_request_results(gazelle_site, results, " / ".join(searchstrs))
-    request_id = _prompt_for_request_id(gazelle_site, results)
+    if results is not None:
+        request_id = _prompt_for_request_id(gazelle_site, results)
     if request_id:
         confirmation = _confirm_request_id(gazelle_site, request_id)
         if confirmation is True:
@@ -34,6 +33,7 @@ def check_requests(gazelle_site, searchstrs,metadata):
 
 
 def get_request_results(gazelle_site, searchstrs):
+    "Get the request results from gazelle site"
     results = []
     for searchstr in searchstrs:
         for release in loop.run_until_complete(
@@ -44,18 +44,19 @@ def get_request_results(gazelle_site, searchstrs):
     return results
 
 def print_request_results(gazelle_site, results, searchstr):
-    """Print all the request search results."""
+    """Print all the request search results.
+    Could use a table in the future."""
     if not results:
         click.secho(
-            f'\nNo requests found on {gazelle_site.site_string} matching this release.',
+            f'\nNo requests were found on {gazelle_site.site_string}',
             fg="green",
             nl=False
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
     else:
         click.secho(
-            f'\nRequests matching this release were found on {gazelle_site.site_string}: ',
-            fg="red",
+            f'\nRequests were found on {gazelle_site.site_string}: ',
+            fg="green",
             nl=False
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
@@ -78,7 +79,6 @@ def print_request_results(gazelle_site, results, searchstr):
                 click.secho(f"{' or '.join(r['formatList'])} / ",nl=False)
                 click.secho(f"{' or '.join(r['mediaList'])} / ")
                 
-
             except (KeyError, TypeError) as e:
                 continue
 
@@ -123,8 +123,8 @@ def _prompt_for_request_id(gazelle_site, results):
     while True:
         request_id = click.prompt(
             click.style(
-                "\nWould you like to fill a request?\n"
-                "Choose from above, paste a url, or do[n]t."
+                "Fill a request? "
+                "Choose from results, paste a url, or do[n]t."
                 ,fg="magenta",
                 bold=True,
             ),
@@ -144,7 +144,7 @@ def _prompt_for_request_id(gazelle_site, results):
 
         elif request_id.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
             request_id = parse.parse_qs(parse.urlparse(request_id).query)['id'][0]
-            return int(request_id)
+            return request_id
         elif request_id.lower().startswith("n"):
             click.echo(f"Not filling a request")
             return None
@@ -179,5 +179,5 @@ def _confirm_request_id(gazelle_site, request_id):
         if resp == "y":
             return True
         elif resp == "n":
-            click.secho(f"Not filling the request", fg="red")
+            click.secho(f"Not filling this request", fg="red")
             return False

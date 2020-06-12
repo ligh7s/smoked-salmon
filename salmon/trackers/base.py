@@ -54,22 +54,21 @@ SearchReleaseData = namedtuple(
 
 
 class BaseGazelleApi:
-    def __init__(self,site_code):
-        tracker_details = config.TRACKERS[str(site_code)]
-
+    def __init__(self):
+        "Base init class shouldn't really be geting used"
         self.headers = {
             "Connection": "keep-alive",
             "Cache-Control": "max-age=0",
             "User-Agent": config.USER_AGENT,
 
         }
-        self.site_code = site_code
-        self.base_url = tracker_details['SITE_URL']
-        self.tracker_url = tracker_details['TRACKER_URL']
-        self.site_string = tracker_details['SITE_STRING']
-        self.cookie = tracker_details['SITE_SESSION']
+        self.site_code = 'RED'
+        self.base_url = 'https://redacted.ch'
+        self.tracker_url = 'https://flacsfor.me'
+        self.site_string = 'RED'
+        self.cookie = config.RED_SESSION
         if 'SITE_API_KEY' in tracker_details.keys():
-            self.api_key = tracker_details['SITE_API_KEY']
+            self.api_key = config.RED_API_KEY
 
         self.session = requests.Session()
         self.session.headers.update(self.headers)
@@ -77,6 +76,7 @@ class BaseGazelleApi:
         self.authkey = None
         self.passkey = None
         self.authenticate()
+
 
     @property
     def announce(self):
