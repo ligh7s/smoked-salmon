@@ -9,6 +9,9 @@ IdentData = namedtuple(
 ArtistRlsData = namedtuple(
     "ArtistRlsData", ["url", "quality", "year", "artist", "album", "label", "explicit"]
 )
+LabelRlsData = namedtuple(
+    "LabelRlsData", ["url", "quality", "year", "artist", "album", "type", "explicit"]
+)
 
 
 class SearchMixin(ABC):

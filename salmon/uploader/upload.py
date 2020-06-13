@@ -12,7 +12,7 @@ from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES, RELEASE_TYPES
 from salmon.images import upload_cover
 
-from salmon.gazelle import RequestError
+from salmon.errors import RequestError
 
 
 from salmon.sources import SOURCE_ICONS
@@ -31,28 +31,29 @@ def prepare_and_upload(
     lossy_master,
     spectral_urls,
     lossy_comment,
+    request_id,
 ):
     """Wrapper function for all the data compiling and processing."""
     if not group_id:
         cover_url = upload_cover(path)
         data = compile_data_new_group(
-            path, metadata, track_data, hybrid, cover_url, spectral_urls, lossy_comment
+            path, metadata, track_data, hybrid, cover_url, spectral_urls, lossy_comment, request_id
         )
     else:
         data = compile_data_existing_group(
-            path, group_id, metadata, track_data, hybrid, spectral_urls, lossy_comment
+            path, group_id, metadata, track_data, hybrid, spectral_urls, lossy_comment, request_id
         )
     torrent_path, torrent_file = generate_torrent(gazelle_site, path)
     files = compile_files(path, torrent_file, metadata)
 
     click.secho(f"Uploading torrent...", fg="yellow")
     try:
-        torrent_id, group_id = loop.run_until_complete(gazelle_site.upload(data, files))
+        torrent_id = loop.run_until_complete(gazelle_site.upload(data, files))
         shutil.move(
             torrent_path,
             os.path.join(config.DOTTORRENTS_DIR, f"{os.path.basename(path)}.torrent"),
         )
-        return torrent_id, group_id
+        return torrent_id
     except RequestError as e:
         click.secho(str(e), fg="red", bold=True)
         exit()
@@ -125,7 +126,7 @@ def concat_track_data(tags, audio_info):
 
 
 def compile_data_new_group(
-    path, metadata, track_data, hybrid, cover_url, spectral_urls, lossy_comment
+    path, metadata, track_data, hybrid, cover_url, spectral_urls, lossy_comment, request_id=None
 ):
     """
     Compile the data dictionary that needs to be submitted with a brand new
@@ -161,11 +162,12 @@ def compile_data_new_group(
         "release_desc": generate_t_description(
             metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment
         ),
+        'requestid':request_id,
     }
 
 
 def compile_data_existing_group(
-    path, group_id, metadata, track_data, hybrid, spectral_urls, lossy_comment
+    path, group_id, metadata, track_data, hybrid, spectral_urls, lossy_comment,request_id
 ):
     """Compile the data that needs to be submitted
      with an upload to an existing group."""
@@ -190,6 +192,7 @@ def compile_data_existing_group(
         "release_desc": generate_t_description(
             metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment
         ),
+        'requestid':request_id
     }
 
 

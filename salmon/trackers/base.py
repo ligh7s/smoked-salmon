@@ -21,6 +21,8 @@ from salmon.errors import (
     RequestFailedError,
 )
 
+
+
 loop = asyncio.get_event_loop()
 
 ARTIST_TYPES = [
@@ -42,53 +44,39 @@ INVERTED_RELEASE_TYPES = {
 }
 
 
+
 SearchReleaseData = namedtuple(
     "SearchReleaseData",
     ["lossless", "lossless_web", "year", "artist", "album", "release_type", "url"],
 )
 
 
-def validate_tracker(ctx, param, value):
-    try:
-        if not value:
-            return False
-        click.secho(f"Uploading to {config.TRACKERS[value.upper()]['SITE_URL']}")
-        return value.upper()
-    except KeyError:
-        raise click.BadParameter(f"{value} is not a tracker in your config.")
-    except AttributeError:
-        raise click.BadParameter(
-            "This flag requires a tracker. Possible sources are: "
-            + ", ".join(config.TRACKERS.keys())
-        )
 
 
-class GazelleApi:
-    def __init__(self, site_code):
-        tracker_details = config.TRACKERS[str(site_code)]
-
+class BaseGazelleApi:
+    def __init__(self):
+        "Base init class shouldn't really be geting used"
         self.headers = {
             "Connection": "keep-alive",
             "Cache-Control": "max-age=0",
             "User-Agent": config.USER_AGENT,
 
         }
-        self.site_code = site_code
-        self.base_url = tracker_details['SITE_URL']
-        self.tracker_url = tracker_details['TRACKER_URL']
-        self.site_string = tracker_details['SITE_STRING']
-        self.cookie = tracker_details['SITE_SESSION']
+        self.site_code = 'RED'
+        self.base_url = 'https://redacted.ch'
+        self.tracker_url = 'https://flacsfor.me'
+        self.site_string = 'RED'
+        self.cookie = config.RED_SESSION
         if 'SITE_API_KEY' in tracker_details.keys():
-            self.api_key = tracker_details['SITE_API_KEY']
+            self.api_key = config.RED_API_KEY
 
         self.session = requests.Session()
         self.session.headers.update(self.headers)
-        self.last_rate_limit_expiry = time.time() - 10
-        self.cur_req_count = 0
 
         self.authkey = None
         self.passkey = None
         self.authenticate()
+
 
     @property
     def announce(self):
@@ -119,7 +107,6 @@ class GazelleApi:
         url = self.base_url + "/ajax.php"
         params = {"action": action, **kwargs}
 
-        self.cur_req_count += 1
         try:
             resp = await loop.run_in_executor(
                 None,
@@ -190,6 +177,51 @@ class GazelleApi:
         releases = list({r.url: r for r in releases}.values())  # Dedupe
 
         return resp["id"], releases
+        
+    async def label_rls(self, label):
+        """
+        Get all the torrent groups from a label on site.
+        All groups without a FLAC will be highlighted.
+        """
+        first_request = await self.request("browse", remasterrecordlabel=label)
+        if 'pages' in first_request.keys():
+            pages = first_request['pages']
+        else:
+            return []
+        all_results=first_request['results']
+        for i in range(1,max(3,pages)):
+            new_results = await self.request("browse", remasterrecordlabel=label,page=str(i))
+            all_results += new_results['results']
+            
+        resp2= await self.request("browse", recordlabel=label)
+        all_results=all_results+resp2["results"]
+        releases = []
+        for group in all_results:
+            if not group["artist"]:
+                artist=html.unescape(
+                    compile_artists(group["artists"], group["releaseType"])
+                    )
+            else:
+                artist=group["artist"]
+            releases.append(
+                SearchReleaseData(
+                    lossless=any(t["format"] == "FLAC" for t in group["torrents"]),
+                    lossless_web=any(
+                        t["format"] == "FLAC" and t["media"] == "WEB"
+                        for t in group["torrents"]
+                    ),
+                    year=group["groupYear"],
+                    artist=artist,
+                    album=html.unescape(group["groupName"]),
+                    release_type=group["releaseType"],
+                    url=f'{self.base_url}/torrents.php?id={group["groupId"]}',
+                )
+            )
+
+        releases = list({r.url: r for r in releases}.values())  # Dedupe
+
+        return  releases
+
 
     async def api_key_upload(self, data, files):
         """Attempt to upload a torrent to the site."""
@@ -206,10 +238,17 @@ class GazelleApi:
         )
         resp = resp.json()
         # print(resp) debug
-        if resp["status"] != "success":
-            raise RequestError(f"Upload failed: {resp['error']}")
-        elif resp["status"] == "success":
-            return resp["response"]["torrentid"], resp["response"]["groupid"]
+        try:
+            if resp["status"] != "success":
+                raise RequestError(f"API upload failed: {resp['error']}")
+            elif resp["status"] == "success":
+                if 'requestid' in resp['response'].keys():
+                    click.secho("Filled request:"
+                    f"{self.base_url}/requests.php?action=view&id={resp['response']['requestid']}",fg="green")
+                return resp["response"]["torrentid"]
+        except TypeError:
+            raise RequestError(f"API upload failed, response text: {resp.text}")
+        
 
     async def site_page_upload(self, data, files):
         url = self.base_url + "/upload.php"
@@ -226,14 +265,19 @@ class GazelleApi:
                 r'<p style="color: red; text-align: center;">(.+)<\/p>', resp.text,
             )
             if match:
-                raise RequestError(f"Upload failed: {match[1]} ({resp.status_code})")
-
+                raise RequestError(f"Site upload failed: {match[1]} ({resp.status_code})")
+        if 'requests.php' in resp.url:
+            try:
+                click.secho(f"Filled request:{resp.url}",fg="green")
+                return parse_torrent_id_from_filled_request_page(resp.text)
+            except TypeError:
+                raise RequestError(f"Site upload failed, response text: {resp.text}")
         try:
             return parse_most_recent_torrent_and_group_id_from_group_page(
                 resp.url, resp.text
             )
         except TypeError:
-            raise RequestError(f"Upload failed, response text: {resp.text}")
+            raise RequestError(f"Site upload failed, response text: {resp.text}")
 
     async def upload(self, data, files):
         """Upload a torrent using upload.php or API key."""
@@ -279,7 +323,6 @@ def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
     Given the HTML (ew) response from a successful upload, find the most
     recently uploaded torrent (it better be ours).
     """
-    group_id = int(re.search(r"\?id=(\d+)", url)[1])
     torrent_ids = []
     soup = BeautifulSoup(text, "html.parser")
     for pl in soup.find_all("a", class_="tooltip"):
@@ -288,4 +331,19 @@ def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
             torrent_ids.append(
                 int(torrent_url[1])
             )
-    return max(torrent_ids), group_id
+    return max(torrent_ids)
+
+def parse_torrent_id_from_filled_request_page(text):
+    """
+    Given the HTML (ew) response from filling a request, 
+    find the filling torrent
+    """
+    torrent_ids = []
+    soup = BeautifulSoup(text, "html.parser")
+    for pl in soup.find_all("a", string="Yes"):
+        torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
+        if torrent_url:
+            torrent_ids.append(
+                int(torrent_url[1])
+            )
+    return max(torrent_ids)

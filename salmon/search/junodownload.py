@@ -50,7 +50,7 @@ class Searcher(JunodownloadBase, SearchMixin):
                         IdentData(artists, title, year, None, "WEB"),
                         self.format_result(artists, title, f"{year} {label} {catno}"),
                     )
-            except (TypeError, IndexError) as e:
+            except (TypeError, IndexError, AttributeError) as e:
                 raise ScrapeError("Failed to parse scraped search results.") from e
             if len(releases) == limit:
                 break

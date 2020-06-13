@@ -11,7 +11,7 @@ from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 
-from salmon.gazelle import GazelleApi, validate_tracker
+import salmon.trackers
 
 from salmon.tagger import (
     metadata_validator_base,
@@ -35,6 +35,7 @@ from salmon.uploader.dupe_checker import (
     check_existing_group,
     generate_dupe_check_searchstrs,
 )
+from salmon.uploader.request_checker import check_requests
 from salmon.uploader.preassumptions import print_preassumptions
 from salmon.uploader.spectrals import (
     check_spectrals,
@@ -96,22 +97,27 @@ loop = asyncio.get_event_loop()
     help="Recompress flacs to the configured compression level before uploading.",
 )
 @click.option("--tracker", "-t",
-              callback=validate_tracker,
-              help=f'Uploading Choices: ({"/".join(config.TRACKERS.keys())})')
+              callback=salmon.trackers.validate_tracker,
+              help=f'Uploading Choices: ({"/".join(config.TRACKER_LIST)})')
+@click.option("--request", "-r",
+              default=None,
+              help=f'Pass a request URL or ID')
 def up(
         path,
         group_id,
         source, lossy,
         spectrals, overwrite,
         encoding, compress,
-        tracker):
+        tracker,
+        request):
     """Upload an album folder to Gazelle Site"""
 
     if not tracker:
-        tracker = choose_tracker(list(config.TRACKERS.keys()), True)
-
-    gazelle_site = GazelleApi(tracker)
+        tracker = salmon.trackers.choose_tracker_first_time()
+    gazelle_site = salmon.trackers.get_class(tracker)()
     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
+    if request:
+        request=salmon.trackers.validate_request(gazelle_site,request)
     print_preassumptions(gazelle_site, path, group_id,
                          source, lossy, spectrals, encoding)
     upload(
@@ -124,6 +130,7 @@ def up(
         encoding,
         overwrite_meta=overwrite,
         recompress=compress,
+        request_id=request,
     )
 
 
@@ -140,6 +147,7 @@ def upload(
     recompress=False,
     source_url=None,
     searchstrs=None,
+    request_id=None,
 ):
     """Upload an album folder to Gazelle Site"""
     path = os.path.abspath(path)
@@ -191,20 +199,26 @@ def upload(
     spectrals_path = os.path.join(path, "Spectrals")
     spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
 
-    remaining_gazelle_sites = list(config.TRACKERS.keys())
+    remaining_gazelle_sites = config.TRACKER_LIST
     tracker = gazelle_site.site_code
     while True:
         # Loop until we don't want to upload to any more sites.
         if not tracker:
-            tracker = choose_tracker(remaining_gazelle_sites)
-            click.secho(
-                f"Uploading to {config.TRACKERS[tracker]['SITE_URL']}", fg="cyan")
-            gazelle_site = GazelleApi(tracker)
+            click.secho("Would you like to upload to another tracker? ",
+                        fg="magenta", nl=False)
+            tracker = salmon.trackers.choose_tracker(remaining_gazelle_sites)
+            gazelle_site = salmon.trackers.get_class(tracker)()
+
+            click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
+            searchstrs = generate_dupe_check_searchstrs(
+                rls_data["artists"], rls_data["title"], rls_data["catno"]
+            )
             group_id = check_existing_group(gazelle_site, searchstrs, metadata)
 
         remaining_gazelle_sites.remove(tracker)
-
-        torrent_id, group_id = prepare_and_upload(
+        if not request_id:
+            request_id = check_requests(gazelle_site, searchstrs, metadata)
+        torrent_id = prepare_and_upload(
             gazelle_site,
             path,
             group_id,
@@ -214,6 +228,7 @@ def upload(
             lossy_master,
             spectral_urls,
             lossy_comment,
+            request_id,
         )
         if lossy_master:
             report_lossy_master(
@@ -226,8 +241,8 @@ def upload(
                 source_url=source_url,
             )
 
-        url = "{}/torrents.php?id={}&torrentid={}".format(
-            gazelle_site.base_url, group_id, torrent_id)
+        url = "{}/torrents.php?torrentid={}".format(
+            gazelle_site.base_url, torrent_id)
         click.secho(
             f"\nSuccessfully uploaded {url} ({os.path.basename(path)}).",
             fg="green",
@@ -236,45 +251,9 @@ def upload(
         if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
             pyperclip.copy(url)
         tracker = None
+        request_id = None
         if not remaining_gazelle_sites:
             return click.secho(f"\nDone uploading this release.", fg="red")
-
-
-def choose_tracker(choices, first_time=False):
-    while True:
-        # Loop until we have chosen a tracker or aborted.
-        if first_time:
-            if len(choices) == 1:
-                return choices[0]
-            if config.DEFAULT_TRACKER:
-                return config.DEFAULT_TRACKER
-            question = 'Which tracker would you like to upload to? '
-        else:
-            question = 'Would you like to upload to another tracker? '
-        tracker_input = click.prompt(
-            click.style(question + f'Your choices are {" , ".join(choices)} '
-                        'or [a]bort.',
-                        fg="magenta", bold=True
-                        ),
-            default=choices[0],
-        )
-        tracker_input = tracker_input.strip()
-        # Input of a number is taken to be picking from the list.
-        if tracker_input.isdigit():
-            tracker_input = int(tracker_input)
-            if tracker_input <= len(choices):
-                return choices[tracker_input - 1]
-        tracker_input = tracker_input.upper()
-        if tracker_input in choices:
-            return tracker_input
-        # this part allows input of the trackers first letter
-        elif tracker_input in [choice[0] for choice in choices]:
-            for choice in choices:
-                if tracker_input == choice[0]:
-                    return choice
-        elif tracker_input.lower().startswith("a"):
-            click.secho(f"\nDone with this release.", fg="red")
-            raise click.Abort
 
 
 def edit_metadata(path, tags, metadata, source, rls_data, recompress):
@@ -324,9 +303,9 @@ def recheck_dupe(gazelle_site, searchstrs, metadata):
         or not searchstrs
         and new_searchstrs
     ):
-        click.secho('\nRechecking for dupes on', fg="cyan", bold=True, nl=False)
-        click.secho(gazelle_site.site_string, bold=True, nl=False)
-        click.secho('due to metadata changes...', bold=True)
+        click.secho(f'\nRechecking for dupes on {gazelle_site.site_string} '
+        'due to metadata changes...'
+        , fg="cyan", bold=True, nl=False)
         return check_existing_group(gazelle_site, new_searchstrs)
 
 
