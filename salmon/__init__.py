@@ -42,7 +42,8 @@ DEFAULT_VALUES = {
     "LMA_COMMENT_IN_T_DESC": False,
     "USE_UPC_AS_CATNO": True,
     "DEFAULT_TRACKER": False,
-    "RED_API_KEY":False
+    "RED_API_KEY":False,
+    "ALWAYS_ASK_FOR_REQUEST_FILL":False
 }
 
 

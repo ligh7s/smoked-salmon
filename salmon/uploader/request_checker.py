@@ -22,14 +22,14 @@ def check_requests(gazelle_site, searchstrs,metadata):
     """
     results = get_request_results(gazelle_site, searchstrs)
     print_request_results(gazelle_site, results, " / ".join(searchstrs))
-    if results is not None:
+    #Should add an option to still prompt if there are no results.
+    if results or config.ALWAYS_ASK_FOR_REQUEST_FILL:
         request_id = _prompt_for_request_id(gazelle_site, results)
-    if request_id:
-        confirmation = _confirm_request_id(gazelle_site, request_id)
-        if confirmation is True:
-            return request_id
-        return None
-    return request_id
+        if request_id:
+            confirmation = _confirm_request_id(gazelle_site, request_id)
+            if confirmation is True:
+                return request_id
+    return None
 
 
 def get_request_results(gazelle_site, searchstrs):
