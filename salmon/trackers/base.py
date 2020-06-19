@@ -10,6 +10,8 @@ from json.decoder import JSONDecodeError
 import click
 import requests
 from bs4 import BeautifulSoup
+from difflib import SequenceMatcher as SM
+
 from requests.exceptions import ConnectTimeout, ReadTimeout
 
 from salmon import config
@@ -20,7 +22,6 @@ from salmon.errors import (
     RequestError,
     RequestFailedError,
 )
-
 
 
 loop = asyncio.get_event_loop()
@@ -44,13 +45,10 @@ INVERTED_RELEASE_TYPES = {
 }
 
 
-
 SearchReleaseData = namedtuple(
     "SearchReleaseData",
     ["lossless", "lossless_web", "year", "artist", "album", "release_type", "url"],
 )
-
-
 
 
 class BaseGazelleApi:
@@ -76,7 +74,6 @@ class BaseGazelleApi:
         self.authkey = None
         self.passkey = None
         self.authenticate()
-
 
     @property
     def announce(self):
@@ -177,7 +174,7 @@ class BaseGazelleApi:
         releases = list({r.url: r for r in releases}.values())  # Dedupe
 
         return resp["id"], releases
-        
+
     async def label_rls(self, label):
         """
         Get all the torrent groups from a label on site.
@@ -188,21 +185,21 @@ class BaseGazelleApi:
             pages = first_request['pages']
         else:
             return []
-        all_results=first_request['results']
-        for i in range(1,max(3,pages)):
-            new_results = await self.request("browse", remasterrecordlabel=label,page=str(i))
+        all_results = first_request['results']
+        for i in range(1, max(3, pages)):
+            new_results = await self.request("browse", remasterrecordlabel=label, page=str(i))
             all_results += new_results['results']
-            
-        resp2= await self.request("browse", recordlabel=label)
-        all_results=all_results+resp2["results"]
+
+        resp2 = await self.request("browse", recordlabel=label)
+        all_results = all_results + resp2["results"]
         releases = []
         for group in all_results:
             if not group["artist"]:
-                artist=html.unescape(
+                artist = html.unescape(
                     compile_artists(group["artists"], group["releaseType"])
-                    )
+                )
             else:
-                artist=group["artist"]
+                artist = group["artist"]
             releases.append(
                 SearchReleaseData(
                     lossless=any(t["format"] == "FLAC" for t in group["torrents"]),
@@ -220,8 +217,21 @@ class BaseGazelleApi:
 
         releases = list({r.url: r for r in releases}.values())  # Dedupe
 
-        return  releases
+        return releases
 
+    def get_uploads_from_log(self, required_uploads=100, max_pages=10):
+        'Crawls n pages of the log and returns all uploads found'
+        url = f'{self.base_url}/log.php'
+        recent_uploads = []
+        for i in range(1, max_pages):
+            params = {'page': i}
+            resp = self.session.get(
+                url, params=params, headers=self.headers
+            )
+            recent_uploads += self.parse_uploads_from_log_html(resp.text)
+            if len(recent_uploads) > required_uploads:
+                break
+        return recent_uploads
 
     async def api_key_upload(self, data, files):
         """Attempt to upload a torrent to the site."""
@@ -244,11 +254,10 @@ class BaseGazelleApi:
             elif resp["status"] == "success":
                 if 'requestid' in resp['response'].keys() and resp['response']['requestid']:
                     click.secho("Filled request:"
-                    f"{self.base_url}/requests.php?action=view&id={resp['response']['requestid']}",fg="green")
+                                f"{self.base_url}/requests.php?action=view&id={resp['response']['requestid']}", fg="green")
                 return resp["response"]["torrentid"]
         except TypeError:
             raise RequestError(f"API upload failed, response text: {resp.text}")
-        
 
     async def site_page_upload(self, data, files):
         url = self.base_url + "/upload.php"
@@ -265,16 +274,17 @@ class BaseGazelleApi:
                 r'<p style="color: red; text-align: center;">(.+)<\/p>', resp.text,
             )
             if match:
-                raise RequestError(f"Site upload failed: {match[1]} ({resp.status_code})")
+                raise RequestError(
+                    f"Site upload failed: {match[1]} ({resp.status_code})")
         if 'requests.php' in resp.url:
             try:
-                click.secho(f"Filled request:{resp.url}",fg="green")
-                return parse_torrent_id_from_filled_request_page(resp.text)
+                click.secho(f"Filled request:{resp.url}", fg="green")
+                return self.parse_torrent_id_from_filled_request_page(resp.text)
             except TypeError:
                 raise RequestError(f"Site upload failed, response text: {resp.text}")
         try:
-            return parse_most_recent_torrent_and_group_id_from_group_page(
-                resp.url, resp.text
+            return self.parse_most_recent_torrent_and_group_id_from_group_page(
+                resp.text
             )
         except TypeError:
             raise RequestError(f"Site upload failed, response text: {resp.text}")
@@ -290,8 +300,8 @@ class BaseGazelleApi:
         """Automagically report a torrent for lossy master/web approval."""
         url = self.base_url + "/reportsv2.php"
         params = {"action": "takereport"}
-        #type_ = "lossywebapproval" if source == "WEB" else "lossyapproval" (only works on RED)
-        type_="lossyapproval"
+        # type_ = "lossywebapproval" if source == "WEB" else "lossyapproval" (only works on RED)
+        type_ = "lossyapproval"
         data = {
             "auth": self.authkey,
             "torrentid": torrent_id,
@@ -312,40 +322,60 @@ class BaseGazelleApi:
             f"Failed to report the torrent for lossy master, code {r.status_code}."
         )
 
+    """The following three parising functions are part of the gazelle class
+    in order that they be easily overwritten in the derivative site classes.
+    Not because they depend on anything from the class"""
+
+    def parse_most_recent_torrent_and_group_id_from_group_page(self, text):
+        """
+        Given the HTML (ew) response from a successful upload, find the most
+        recently uploaded torrent (it better be ours).
+        """
+        torrent_ids = []
+        soup = BeautifulSoup(text, "html.parser")
+        for pl in soup.find_all("a", class_="tooltip"):
+            torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
+            if torrent_url:
+                torrent_ids.append(
+                    int(torrent_url[1])
+                )
+        return max(torrent_ids)
+
+    def parse_torrent_id_from_filled_request_page(self, text):
+        """
+        Given the HTML (ew) response from filling a request, 
+        find the filling torrent
+        """
+        torrent_ids = []
+        soup = BeautifulSoup(text, "html.parser")
+        for pl in soup.find_all("a", string="Yes"):
+            torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
+            if torrent_url:
+                torrent_ids.append(
+                    int(torrent_url[1])
+                )
+        return max(torrent_ids)
+
+    def parse_uploads_from_log_html(self, text):
+        "Parses a log page and returns best guess at (torrent id, 'Artist', 'title') tuples"
+        log_uploads = []
+        soup = BeautifulSoup(text, "html.parser")
+        for entry in soup.find_all("span", class_="log_upload"):
+            torrent_id = entry.find("a")['href'][23:]
+            torrent_string = re.findall(
+                "\((.*?)\) \(", entry.find("a").next_sibling)[0].split(" - ")
+            artist = torrent_string[0]
+            if len(torrent_string) > 1:
+                title = torrent_string[1]
+            else:
+                artist = ""
+                title = torrent_string[0]
+            log_uploads.append((torrent_id, artist, title))
+        return log_uploads
+
 
 def compile_artists(artists, release_type):
     """Generate a string to represent the artists."""
     if release_type == 7 or len(artists) > 3:
         return config.VARIOUS_ARTIST_WORD
     return " & ".join([a["name"] for a in artists])
-
-
-def parse_most_recent_torrent_and_group_id_from_group_page(url, text):
-    """
-    Given the HTML (ew) response from a successful upload, find the most
-    recently uploaded torrent (it better be ours).
-    """
-    torrent_ids = []
-    soup = BeautifulSoup(text, "html.parser")
-    for pl in soup.find_all("a", class_="tooltip"):
-        torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
-        if torrent_url:
-            torrent_ids.append(
-                int(torrent_url[1])
-            )
-    return max(torrent_ids)
-
-def parse_torrent_id_from_filled_request_page(text):
-    """
-    Given the HTML (ew) response from filling a request, 
-    find the filling torrent
-    """
-    torrent_ids = []
-    soup = BeautifulSoup(text, "html.parser")
-    for pl in soup.find_all("a", string="Yes"):
-        torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
-        if torrent_url:
-            torrent_ids.append(
-                int(torrent_url[1])
-            )
-    return max(torrent_ids)
