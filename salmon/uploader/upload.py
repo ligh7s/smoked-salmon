@@ -51,7 +51,7 @@ def prepare_and_upload(
         torrent_id = loop.run_until_complete(gazelle_site.upload(data, files))
         shutil.move(
             torrent_path,
-            os.path.join(config.DOTTORRENTS_DIR, f"{os.path.basename(path)}.torrent"),
+            os.path.join(config.DOTTORRENTS_DIR, f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent"),
         )
         return torrent_id
     except RequestError as e:
@@ -70,17 +70,15 @@ def report_lossy_master(
 ):
     """
     Generate the report description and call the function to report the torrent
-    for lossy master approval. Use LWA if the torrent is web, otherwise LMA.
+    for lossy WEB/master approval.
     """
-    #type_ = "lossywebapproval" if source == "WEB" else "lossyapproval"
-    #^This doesn't work on OPS and makes little difference on RED
-    type_ = "lossyapproval"
+
     filenames = list(track_data.keys())
     comment = _add_spectral_links_to_lossy_comment(
         comment, source_url, spectral_urls, filenames
     )
     loop.run_until_complete(
-        gazelle_site.report_lossy_master(torrent_id, comment, type_))
+        gazelle_site.report_lossy_master(torrent_id, comment, source))
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 
@@ -281,16 +279,16 @@ def generate_t_description(
     if not hybrid:
         track = next(iter(track_data.values()))
         if track["precision"]:
-            description += "Encode Specifics: {} bit {:.01f} kHz\n\n".format(
+            description += "Encode Specifics: {} bit {:.01f} kHz\n".format(
                 track["precision"], track["sample rate"] / 1000
             )
         else:
-            description += "Encode Specifics: {:.01f} kHz\n\n".format(
+            description += "Encode Specifics: {:.01f} kHz\n".format(
                 track["sample rate"] / 1000
             )
 
     if metadata["date"]:
-        description += f'Released on {metadata["date"]}\n\n'
+        description += f'Released on {metadata["date"]}\n'
 
     if config.INCLUDE_TRACKLIST_IN_T_DESC:
         for filename, track in track_data.items():

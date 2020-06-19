@@ -37,15 +37,18 @@ class RedApi(BaseGazelleApi):
         self.passkey = None
         self.authenticate()
 
-    async def report_lossy_master(self, torrent_id, comment, type_="lossywebapproval"):
-        """Automagically report a torrent for lossy master/web approval."""
+    async def report_lossy_master(self, torrent_id, comment, source):
+        """Automagically report a torrent for lossy master/web approval.
+         Use LWA if the torrent is web, otherwise LMA."""
+        
         url = self.base_url + "/reportsv2.php"
         params = {"action": "takereport"}
+        type_ = "lossywebapproval" if source == "WEB" else "lossyapproval"
         data = {
             "auth": self.authkey,
             "torrentid": torrent_id,
             "categoryid": 1,
-            "type": 'lossywebapproval',
+            "type": type_,
             "extra": comment,
             "submit": True,
         }

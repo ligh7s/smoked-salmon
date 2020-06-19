@@ -4,7 +4,7 @@ from urllib import parse
 
 import click
 
-
+from salmon import config
 from salmon.common import RE_FEAT, make_searchstrs
 from salmon.errors import AbortAndDeleteFolder
 
@@ -12,10 +12,6 @@ from salmon.errors import RequestError
 import rich
 
 loop = asyncio.get_event_loop()
-#import bbcode
-
-#parser = bbcode.Parser()
-
 def check_requests(gazelle_site, searchstrs,metadata):
     """
     Search for requests on site and offer a choice to fill one.
@@ -64,7 +60,7 @@ def print_request_results(gazelle_site, results, searchstr):
             try:
                 url = f'{gazelle_site.base_url}/requests.php?id={r["requestId"]}'
                 # User doesn't get to pick a zero index
-                click.echo(f" {r_index+1:02d} >> {r['requestId']} | ", nl=False)
+                click.echo(f" {r_index+1:02d} >> {url} | ", nl=False)
                 if len(r['artists'][0])>3:
                     r['artist'] = "Various Artists"
                 else:

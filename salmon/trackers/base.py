@@ -242,7 +242,7 @@ class BaseGazelleApi:
             if resp["status"] != "success":
                 raise RequestError(f"API upload failed: {resp['error']}")
             elif resp["status"] == "success":
-                if 'requestid' in resp['response'].keys():
+                if 'requestid' in resp['response'].keys() and resp['response']['requestid']:
                     click.secho("Filled request:"
                     f"{self.base_url}/requests.php?action=view&id={resp['response']['requestid']}",fg="green")
                 return resp["response"]["torrentid"]
@@ -286,10 +286,12 @@ class BaseGazelleApi:
         else:
             return await self.site_page_upload(data, files)
 
-    async def report_lossy_master(self, torrent_id, comment, type_="lossyapproval"):
+    async def report_lossy_master(self, torrent_id, comment, source):
         """Automagically report a torrent for lossy master/web approval."""
         url = self.base_url + "/reportsv2.php"
         params = {"action": "takereport"}
+        #type_ = "lossywebapproval" if source == "WEB" else "lossyapproval" (only works on RED)
+        type_="lossyapproval"
         data = {
             "auth": self.authkey,
             "torrentid": torrent_id,

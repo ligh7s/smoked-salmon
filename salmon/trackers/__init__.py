@@ -76,8 +76,9 @@ def validate_tracker(ctx, param, value):
             "This flag requires a tracker. Possible sources are: "
             + ", ".join(config.TRACKER_LIST)
         )
+    
 def validate_request(gazelle_site, request):
-    """Check the request given is a real WEB request.
+    """Check the request id is a url or number.
     Should it check more?
     """
     try:
