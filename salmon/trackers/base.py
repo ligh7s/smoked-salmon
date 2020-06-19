@@ -186,6 +186,9 @@ class BaseGazelleApi:
         else:
             return []
         all_results = first_request['results']
+        # Three is an arbitrary (low) number.
+        # Hits to the site are slow because of rate limiting.
+        # Should probably be spun out into a pagnation function at some point.
         for i in range(1, max(3, pages)):
             new_results = await self.request("browse", remasterrecordlabel=label, page=str(i))
             all_results += new_results['results']
@@ -219,8 +222,8 @@ class BaseGazelleApi:
 
         return releases
 
-    def get_uploads_from_log(self, required_uploads=100, max_pages=10):
-        'Crawls n pages of the log and returns all uploads found'
+    def get_uploads_from_log(self, max_uploads=100, max_pages=10):
+        'Crawls some pages of the log and returns uploads'
         url = f'{self.base_url}/log.php'
         recent_uploads = []
         for i in range(1, max_pages):
@@ -229,7 +232,7 @@ class BaseGazelleApi:
                 url, params=params, headers=self.headers
             )
             recent_uploads += self.parse_uploads_from_log_html(resp.text)
-            if len(recent_uploads) > required_uploads:
+            if len(recent_uploads) > max_uploads:
                 break
         return recent_uploads
 
