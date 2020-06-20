@@ -411,7 +411,7 @@ def post_upload_spectral_check(gazelle_site,path, torrent_id,spectral_ids,track_
         click.echo()
         
     spectrals_path = os.path.join(path, "Spectrals")
-    spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path)
+    spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
     
     if spectral_urls:
         spectrals_bbcode = ""
