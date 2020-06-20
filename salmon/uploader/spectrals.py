@@ -19,6 +19,14 @@ from salmon.errors import (
 from salmon.images import upload_spectrals as upload_spectral_imgs
 from salmon.web import create_app_async, spectrals
 
+#used by post upload stuff might move.
+import re
+from bs4 import BeautifulSoup
+from salmon.uploader.upload import (
+    generate_lossy_approval_comment,
+    report_lossy_master,
+)
+
 loop = asyncio.get_event_loop()
 THREADS = [None] * config.SIMULTANEOUS_SPECTRALS
 
@@ -391,3 +399,38 @@ def prompt_lossy_master():
             raise click.Abort
         elif r == "d":
             raise AbortAndDeleteFolder
+
+def post_upload_spectral_check(gazelle_site,path, torrent_id,spectral_ids,track_data,source,source_url):
+    "Offers generation and adition of spectrals after upload"
+    lossy_master, spectral_ids = check_spectrals(path, track_data, None, spectral_ids)
+    lossy_comment = None
+    if lossy_master:
+        lossy_comment = generate_lossy_approval_comment(
+            source_url, list(track_data.keys())
+        )
+        click.echo()
+        
+    spectrals_path = os.path.join(path, "Spectrals")
+    spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path)
+    
+    if spectral_urls:
+        spectrals_bbcode = ""
+        filenames = list(track_data.keys())
+        spectrals_bbcode += "[u]Spectrals:[/u]"
+        for spec_id, urls in spectral_urls.items():
+            filename = re.sub(r"[\[\]]", "_", filenames[spec_id])
+            spectrals_bbcode += f'\n[hide={filename}][img={"][img=".join(urls)}][/hide]'
+        spectrals_bbcode += "\n\n"
+        a=loop.run_until_complete(gazelle_site.append_to_torrent_description(torrent_id,spectrals_bbcode))
+    
+    if lossy_master:
+            report_lossy_master(
+                gazelle_site,
+                torrent_id,
+                spectral_urls,
+                track_data,
+                source,
+                lossy_comment,
+                source_url,
+            )
+    return lossy_master, lossy_comment, spectral_urls

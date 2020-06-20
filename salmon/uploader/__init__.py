@@ -40,6 +40,7 @@ from salmon.uploader.preassumptions import print_preassumptions
 from salmon.uploader.spectrals import (
     check_spectrals,
     handle_spectrals_upload_and_deletion,
+    post_upload_spectral_check,
 )
 from salmon.uploader.upload import (
     concat_track_data,
@@ -102,6 +103,9 @@ loop = asyncio.get_event_loop()
 @click.option("--request", "-r",
               default=None,
               help=f'Pass a request URL or ID')
+@click.option("--spectrals-after", "-a",
+              is_flag=True,
+              help=f'Assess/ host / report spectrals after upload')
 def up(
         path,
         group_id,
@@ -109,17 +113,15 @@ def up(
         spectrals, overwrite,
         encoding, compress,
         tracker,
-        request):
+        request,
+        spectrals_after):
     """Upload an album folder to Gazelle Site"""
-
-    if not tracker:
-        tracker = salmon.trackers.choose_tracker_first_time()
     gazelle_site = salmon.trackers.get_class(tracker)()
-    click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
     if request:
-        request=salmon.trackers.validate_request(gazelle_site,request)
+        #This is isn't handled by click because we need the tracker sorted first.
+        request = salmon.trackers.validate_request(gazelle_site, request)
     print_preassumptions(gazelle_site, path, group_id,
-                         source, lossy, spectrals, encoding)
+                         source, lossy, spectrals, encoding, spectrals_after)
     upload(
         gazelle_site,
         path,
@@ -131,6 +133,7 @@ def up(
         overwrite_meta=overwrite,
         recompress=compress,
         request_id=request,
+        spectrals_after=spectrals_after,
     )
 
 
@@ -148,6 +151,7 @@ def upload(
     source_url=None,
     searchstrs=None,
     request_id=None,
+    spectrals_after=True,
 ):
     """Upload an album folder to Gazelle Site"""
     path = os.path.abspath(path)
@@ -173,7 +177,13 @@ def upload(
                 rls_data["artists"], rls_data["title"], rls_data["catno"]
             )
             group_id = check_existing_group(gazelle_site, searchstrs)
-        lossy_master, spectral_ids = check_spectrals(path, audio_info, lossy, spectrals)
+
+        if spectrals_after:
+            lossy_master = False
+            # We tell the uploader not to worry about it being lossy.
+        else:
+            lossy_master, spectral_ids = check_spectrals(
+                path, audio_info, lossy, spectrals)
         metadata = get_metadata(path, tags, rls_data)
         download_cover_if_nonexistent(path, metadata["cover"])
         path, metadata, tags, audio_info = edit_metadata(
@@ -190,20 +200,30 @@ def upload(
         return click.secho(f"\nDeleted folder, aborting upload...", fg="red")
 
     lossy_comment = None
-    if lossy_master:
-        lossy_comment = generate_lossy_approval_comment(
-            source_url, list(track_data.keys())
-        )
-        click.echo()
+    if spectrals_after:
+        spectral_urls = None
+    else:
+        if lossy_master:
+            lossy_comment = generate_lossy_approval_comment(
+                source_url, list(track_data.keys())
+            )
+            click.echo()
 
-    spectrals_path = os.path.join(path, "Spectrals")
-    spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
+        spectrals_path = os.path.join(path, "Spectrals")
+        spectral_urls = handle_spectrals_upload_and_deletion(
+            spectrals_path, spectral_ids)
 
     remaining_gazelle_sites = config.TRACKER_LIST
     tracker = gazelle_site.site_code
     while True:
         # Loop until we don't want to upload to any more sites.
         if not tracker:
+            if spectrals_after:
+                # Here we are doing the spectrals for the first torrent
+                # if there was a flag used to ask for them done after.
+                lossy_master, lossy_comment, spectral_urls = post_upload_spectral_check(
+                    gazelle_site, path, torrent_id, None, track_data, source, source_url)
+                spectrals_after = False
             click.secho("Would you like to upload to another tracker? ",
                         fg="magenta", nl=False)
             tracker = salmon.trackers.choose_tracker(remaining_gazelle_sites)
@@ -253,7 +273,7 @@ def upload(
         tracker = None
         request_id = None
         if not remaining_gazelle_sites:
-            return click.secho(f"\nDone uploading this release.", fg="red")
+            return click.secho(f"\nDone uploading this release.", fg="green")      
 
 
 def edit_metadata(path, tags, metadata, source, rls_data, recompress):
@@ -304,8 +324,7 @@ def recheck_dupe(gazelle_site, searchstrs, metadata):
         and new_searchstrs
     ):
         click.secho(f'\nRechecking for dupes on {gazelle_site.site_string} '
-        'due to metadata changes...'
-        , fg="cyan", bold=True, nl=False)
+                    'due to metadata changes...', fg="cyan", bold=True, nl=False)
         return check_existing_group(gazelle_site, new_searchstrs)
 
 

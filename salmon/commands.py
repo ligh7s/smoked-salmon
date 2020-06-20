@@ -1,6 +1,7 @@
 import asyncio
 import importlib
 import os
+from urllib import parse
 
 import click
 import pyperclip
@@ -26,6 +27,7 @@ from salmon.tagger.sources import run_metadata
 from salmon.uploader.spectrals import (
     check_spectrals,
     handle_spectrals_upload_and_deletion,
+    post_upload_spectral_check,
 )
 from salmon.uploader.upload import generate_source_links
 
@@ -127,3 +129,49 @@ def compress(path):
                 filepath = os.path.join(root, f)
                 click.secho(f"Recompressing {filepath[len(path) + 1:]}...")
                 recompress(filepath)
+
+@commandgroup.command()
+@click.option("--torrent-id", "-i", default=None, help="Torrent id or URL")
+@click.option("--tracker", "-t",
+              help=f'Tracker choices: ({"/".join(config.TRACKER_LIST)})')
+@click.argument(
+    "path", type=click.Path(exists=True, file_okay=False, resolve_path=True), nargs=1,default=".",
+)
+def checkspecs(tracker, torrent_id,path):
+    """Will check the spectrals of a given torrent based on local files.\n
+    By default checks the folder the script is run from.
+    Can add spectrals to a torrent description and report a torrent as lossy web.
+    """
+    if not torrent_id:
+        click.secho("No torrent id provided.",fg="red")
+        torrent_id = click.prompt(
+                click.style(
+                    
+                    "Input a torrent id or a URL containing one. ",
+                    fg="magenta",
+                    bold=True,
+                ),
+            )
+        if "/torrents.php" in torrent_id:
+            base_url=parse.urlparse(torrent_id).netloc
+            if base_url in  salmon.trackers.tracker_urls.keys():
+                #this will overide -t tracker
+                tracker = salmon.trackers.tracker_urls[base_url]
+            else:
+                click.echo('Unrecognised tracker!')
+                raise click.Abort
+            torrent_id= int(parse.parse_qs(parse.urlparse(torrent_id).query)['torrentid'][0])
+        elif torrent_id.strip().isdigit():
+            torrent_id=int(torrent_id)
+        else:
+            click.echo('Not a valid torrent!')
+            raise click.Abort
+    tracker=salmon.trackers.validate_tracker(None, 'tracker' ,tracker)    
+    gazelle_site = salmon.trackers.get_class(tracker)()
+    req= loop.run_until_complete(gazelle_site.request("torrent", id=torrent_id))
+    path=os.path.join(os.path.dirname(path), path+"/"+req['torrent']['filePath'])
+    source_url = None
+    source = req['torrent']['media']
+    click.secho(f"Generating spectrals for {source} sourced: {path}")
+    track_data = gather_audio_info(path)
+    post_upload_spectral_check(gazelle_site, path, torrent_id, None,track_data, source, source_url)
