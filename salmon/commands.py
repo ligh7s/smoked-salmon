@@ -152,20 +152,20 @@ def checkspecs(tracker, torrent_id,path):
                     bold=True,
                 ),
             )
-        if "/torrents.php" in torrent_id:
-            base_url=parse.urlparse(torrent_id).netloc
-            if base_url in  salmon.trackers.tracker_urls.keys():
-                #this will overide -t tracker
-                tracker = salmon.trackers.tracker_urls[base_url]
-            else:
-                click.echo('Unrecognised tracker!')
-                raise click.Abort
-            torrent_id= int(parse.parse_qs(parse.urlparse(torrent_id).query)['torrentid'][0])
-        elif torrent_id.strip().isdigit():
-            torrent_id=int(torrent_id)
+    if "/torrents.php" in torrent_id:
+        base_url=parse.urlparse(torrent_id).netloc
+        if base_url in  salmon.trackers.tracker_urls.keys():
+            #this will overide -t tracker
+            tracker = salmon.trackers.tracker_urls[base_url]
         else:
-            click.echo('Not a valid torrent!')
+            click.echo('Unrecognised tracker!')
             raise click.Abort
+        torrent_id= int(parse.parse_qs(parse.urlparse(torrent_id).query)['torrentid'][0])
+    elif torrent_id.strip().isdigit():
+        torrent_id=int(torrent_id)
+    else:
+        click.echo('Not a valid torrent!')
+        raise click.Abort
     tracker=salmon.trackers.validate_tracker(None, 'tracker' ,tracker)    
     gazelle_site = salmon.trackers.get_class(tracker)()
     req= loop.run_until_complete(gazelle_site.request("torrent", id=torrent_id))
