@@ -10,6 +10,10 @@ tracker_classes={
     'RED':red.RedApi,
     'OPS':ops.OpsApi
 }
+tracker_urls={
+    'redacted.ch':'RED',
+    'orpheus.network':'OPS'
+}
 
 def get_class(site_code):
     "Returns the api class from the tracker string."
@@ -30,16 +34,16 @@ def choose_tracker(choices):
         )
         tracker_input = tracker_input.strip().upper()
         if tracker_input in choices:
-            click.secho(f"Using tracker: {tracker_input}",fg="magenta")
+            click.secho(f"Using tracker: {tracker_input}",fg="green")
             return tracker_input
         # this part allows input of the first letter of the tracker code.
         elif tracker_input in [choice[0] for choice in choices]:
             for choice in choices:
                 if tracker_input == choice[0]:
-                    click.secho(f"Using tracker: {choice}",fg="magenta")
+                    click.secho(f"Using tracker: {choice}",fg="green")
                     return choice
         elif tracker_input.lower().startswith("a"):
-            click.secho(f"\nDone with this release.", fg="red")
+            click.secho(f"\nDone with this release.", fg="green")
             raise click.Abort
 
 
@@ -52,7 +56,7 @@ def choose_tracker_first_time(question="Which tracker would you like to upload t
                 click.secho(f"Using tracker: {choices[0]}")
                 return choices[0]
     if config.DEFAULT_TRACKER:
-        click.secho(f"Using tracker: {config.DEFAULT_TRACKER}",fg="magenta")
+        click.secho(f"Using tracker: {config.DEFAULT_TRACKER}",fg="green")
         return config.DEFAULT_TRACKER
     click.secho(question, fg="magenta",bold=True)
     tracker = choose_tracker(choices)
@@ -66,10 +70,10 @@ def validate_tracker(ctx, param, value):
         if value is None:
             return choose_tracker_first_time()
         if value.upper() in config.TRACKER_LIST:
-            click.secho(f"Using tracker: {value.upper()}",fg="magenta")
+            click.secho(f"Using tracker: {value.upper()}",fg="green")
             return value.upper() 
         else:
-            click.secho(f"{value} is not a tracker in your config.")
+            click.secho(f"{value} is not a tracker in your config.",fg="red")
             return choose_tracker(config.TRACKER_LIST)
     except AttributeError:
         raise click.BadParameter(
@@ -79,7 +83,7 @@ def validate_tracker(ctx, param, value):
     
 def validate_request(gazelle_site, request):
     """Check the request id is a url or number.
-    Should it check more?
+    Should it check more? Currently no checking it is the right tracker.
     """
     try:
         if request is None:
