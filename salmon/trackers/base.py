@@ -10,7 +10,7 @@ from json.decoder import JSONDecodeError
 import click
 import requests
 from bs4 import BeautifulSoup
-from difflib import SequenceMatcher as SM
+
 
 from requests.exceptions import ConnectTimeout, ReadTimeout
 
@@ -89,6 +89,7 @@ class BaseGazelleApi:
             raise LoginError
         self.authkey = acctinfo["authkey"]
         self.passkey = acctinfo["passkey"]
+        print ('authenticated')
 
     @sleep_and_retry
     @limits(5, 10)
@@ -124,7 +125,7 @@ class BaseGazelleApi:
             sys.exit(1)
 
         if resp["status"] != "success":
-            raise RequestFailedError
+            raise RequestFailedError(resp["error"])
         return resp["response"]
 
     async def torrentgroup(self, group_id):
@@ -284,7 +285,11 @@ class BaseGazelleApi:
                 click.secho(f"Filled request:{resp.url}", fg="green")
                 return self.parse_torrent_id_from_filled_request_page(resp.text)
             except TypeError:
-                raise RequestError(f"Site upload failed, response text: {resp.text}")
+                soup = BeautifulSoup(resp.text, "html.parser")
+                error=soup.find('h2',text='Error')
+                if error:
+                    error_message=error.parent.parent.find('p').text
+                raise RequestError(f"Request fill failed: {error_message}")
         try:
             return self.parse_most_recent_torrent_and_group_id_from_group_page(
                 resp.text
@@ -324,6 +329,44 @@ class BaseGazelleApi:
         raise RequestError(
             f"Failed to report the torrent for lossy master, code {r.status_code}."
         )
+    async def append_to_torrent_description(self,torrent_id,description_additon):
+        'Adds to the start of an individual torrent description'
+        current_details = await self.request("torrent", id=torrent_id)
+        new_data={'action':'takeedit',
+                'torrentid': torrent_id,
+                'type': 1,
+                "groupremasters": 0,
+                "remaster_year": current_details['torrent']['remasterYear'],
+                "remaster_title": current_details['torrent']['remasterTitle'],
+                "remaster_record_label": current_details['torrent']['remasterRecordLabel'],
+                "remaster_catalogue_number": current_details['torrent']['remasterCatalogueNumber'],
+                "format": current_details['torrent']['format'],
+                "bitrate": current_details['torrent']['encoding'],
+                "other_bitrate": "",
+                "media": current_details['torrent']['media'],
+                "release_desc": description_additon+current_details['torrent']['description']
+        }
+        
+        url=self.base_url+'/torrents.php'
+        new_data["auth"] = self.authkey
+        resp = await loop.run_in_executor(
+            None,
+            lambda:self.session.post(
+                url, data=new_data, headers=self.headers
+         ),
+        )
+        soup = BeautifulSoup(resp.text, "html.parser")
+        edit_error=soup.find('h2',text='Error')
+        if edit_error:
+            error_message=edit_error.parent.parent.find('p').text
+            raise RequestError(
+                f"Failed to edit torrent: {error_message}"
+            )
+        else:
+            click.secho(
+                    "Added spectrals to the torrent description.",
+                    fg="green",
+                )
 
     """The following three parising functions are part of the gazelle class
     in order that they be easily overwritten in the derivative site classes.
