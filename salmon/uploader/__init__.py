@@ -220,7 +220,7 @@ def upload(
         if not tracker:
             if spectrals_after:
                 # Here we are doing the spectrals for the first torrent
-                # if there was a flag used to ask for them done after.
+                # if they were not done before.
                 lossy_master, lossy_comment, spectral_urls = post_upload_spectral_check(
                     gazelle_site, path, torrent_id, None, track_data, source, source_url)
                 spectrals_after = False
@@ -237,7 +237,7 @@ def upload(
 
         remaining_gazelle_sites.remove(tracker)
         if not request_id:
-            request_id = check_requests(gazelle_site, searchstrs, metadata)
+            request_id = check_requests(gazelle_site, searchstrs)
         torrent_id = prepare_and_upload(
             gazelle_site,
             path,

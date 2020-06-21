@@ -15,10 +15,11 @@ from salmon import config
 
 loop = asyncio.get_event_loop()
 
-def dupe_check_recent_torrents(gazelle_site,searchstr):
+def dupe_check_recent_torrents(gazelle_site,searchstrs):
     """Checks the site log for recent uploads similar to ours.
     It may be a little slow as it has to fetch multiple pages of the log
     It also has to do a string distance comparison for each result"""
+    searchstr=searchstrs[0]
     recent_uploads=gazelle_site.get_uploads_from_log()
     #Each upload in this list is best guess at (id,artist,title) from log
     hits=[]
@@ -42,7 +43,17 @@ def dupe_check_recent_torrents(gazelle_site,searchstr):
             hits.append(upload)
     return hits
 
-
+def print_recent_upload_results(gazelle_site,recent_uploads,searchstr):
+    print(searchstr)
+    if recent_uploads:
+            click.secho(
+            f'\nFound similar recent uploads in the {gazelle_site.site_string} log: ',
+            fg="red",
+            nl=False
+            )
+            click.secho(f" (searchstrs: {searchstr})", bold=True)
+            for u in recent_uploads[:5]:
+                click.secho(f'{u[1]} - {u[2]} | {gazelle_site.base_url}/torrents.php?torrentid={u[0]}',fg="cyan")
 
 def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
     """
@@ -51,7 +62,11 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
     anything on site.
     """
     results = get_search_results(gazelle_site, searchstrs)
-    print_search_results(gazelle_site, results, " / ".join(searchstrs))
+    if not results and config.CHECK_RECENT_UPLOADS:
+        recent_uploads=dupe_check_recent_torrents(gazelle_site,searchstrs)
+        print_recent_upload_results(gazelle_site,recent_uploads," / ".join(searchstrs))
+    else:    
+        print_search_results(gazelle_site, results, " / ".join(searchstrs))
     group_id = _prompt_for_group_id(gazelle_site, results, offer_deletion)
     if group_id:
         confirmation = _confirm_group_id(gazelle_site, group_id, results)
@@ -60,16 +75,18 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
         return None
     return group_id
 
-
 def get_search_results(gazelle_site, searchstrs):
     results = []
-    for searchstr in searchstrs:
-        for release in loop.run_until_complete(
-            gazelle_site.request("browse", searchstr=searchstr)
-        )["results"]:
+    tasks = [
+                gazelle_site.request("browse", searchstr=searchstr)
+                for searchstr in searchstrs
+            ]
+    for releases in loop.run_until_complete(asyncio.gather(*tasks)):
+        for release in releases['results']:
             if release not in results:
-                results.append(release)
+                    results.append(release)
     return results
+
 
 
 def generate_dupe_check_searchstrs(artists, album, catno=None):
@@ -123,26 +140,11 @@ def filter_unnecessary_searchstrs(searchstrs):
 def print_search_results(gazelle_site, results, searchstr):
     """Print all the site search results."""
     if not results:
-        if config.CHECK_RECENT_UPLOADS:
-            recent_uploads=dupe_check_recent_torrents(gazelle_site,searchstr)
-        else:
-            recent_uploads=[]
-        if recent_uploads:
-            click.secho(
-            f'\nFound similar recent uploads in the {gazelle_site.site_string} log: ',
-            fg="red",
+        click.secho(
+            f'\nNo groups found on {gazelle_site.site_string} matching this release.',
+            fg="green",
             nl=False
-            )
-            click.secho(f" (searchstrs: {searchstr})", bold=True)
-            for u in recent_uploads[:5]:
-                click.secho(f'{u[1]} - {u[2]} | {gazelle_site.base_url}/torrents.php?torrentid={u[0]}',fg="cyan")
-        else:
-            click.secho(
-                f'\nNo groups found on {gazelle_site.site_string} matching this release.',
-                fg="green",
-                nl=False
-            )
-            
+        )    
     else:
         click.secho(
             f'\nResults matching this release were found on {gazelle_site.site_string}: ',

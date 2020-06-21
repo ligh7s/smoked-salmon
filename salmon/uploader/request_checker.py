@@ -12,7 +12,7 @@ from salmon.errors import RequestError
 import rich
 
 loop = asyncio.get_event_loop()
-def check_requests(gazelle_site, searchstrs,metadata):
+def check_requests(gazelle_site, searchstrs):
     """
     Search for requests on site and offer a choice to fill one.
     """
@@ -33,7 +33,7 @@ def get_request_results(gazelle_site, searchstrs):
     results = []
     for searchstr in searchstrs:
         for release in loop.run_until_complete(
-            gazelle_site.request("requests", search=searchstr)
+            gazelle_site.request("requests", search=searchstr)#,order='bounty')
         )["results"]:
             if release not in results:
                 results.append(release)
