@@ -50,7 +50,6 @@ SearchReleaseData = namedtuple(
     ["lossless", "lossless_web", "year", "artist", "album", "release_type", "url"],
 )
 
-
 class BaseGazelleApi:
     def __init__(self):
         "Base init class shouldn't really be geting used"
@@ -89,7 +88,6 @@ class BaseGazelleApi:
             raise LoginError
         self.authkey = acctinfo["authkey"]
         self.passkey = acctinfo["passkey"]
-        print ('authenticated')
 
     @sleep_and_retry
     @limits(5, 10)
@@ -104,7 +102,6 @@ class BaseGazelleApi:
 
         url = self.base_url + "/ajax.php"
         params = {"action": action, **kwargs}
-
         try:
             resp = await loop.run_in_executor(
                 None,
@@ -222,19 +219,28 @@ class BaseGazelleApi:
         releases = list({r.url: r for r in releases}.values())  # Dedupe
 
         return releases
+        
+    async def fetch_log(self, page):
+        """Fetch a page of the log. No search. Search envokes the sphynx"""
+        url = f'{self.base_url}/log.php'
+        resp = await loop.run_in_executor(
+            None,
+            lambda: self.session.get(
+                url, params={'page':page}, headers=self.headers
+            )
+        )
+        return resp
 
-    def get_uploads_from_log(self, max_uploads=100, max_pages=10):
+    def get_uploads_from_log(self, max_pages=10):
         'Crawls some pages of the log and returns uploads'
         url = f'{self.base_url}/log.php'
         recent_uploads = []
-        for i in range(1, max_pages):
-            params = {'page': i}
-            resp = self.session.get(
-                url, params=params, headers=self.headers
-            )
-            recent_uploads += self.parse_uploads_from_log_html(resp.text)
-            if len(recent_uploads) > max_uploads:
-                break
+        tasks = [
+                self.fetch_log(i)
+                for i in range(1,max_pages)
+            ]
+        for page in loop.run_until_complete(asyncio.gather(*tasks)):
+            recent_uploads += self.parse_uploads_from_log_html(page.text)
         return recent_uploads
 
     async def api_key_upload(self, data, files):
