@@ -134,6 +134,8 @@ def compile_data_new_group(
     if config.USE_UPC_AS_CATNO:
         if not metadata["catno"]:
             catno=metadata["upc"] 
+        else: 
+            catno+=" / "+metadata["upc"] 
     return {
         "submit": True,
         "type": 0,
