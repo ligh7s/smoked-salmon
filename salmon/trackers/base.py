@@ -99,7 +99,7 @@ class BaseGazelleApi:
         short bursts of requests without a 2 second wait after each one
         (at the expense of a potentially longer wait later).
         """
-
+        
         url = self.base_url + "/ajax.php"
         params = {"action": action, **kwargs}
         try:
@@ -173,12 +173,15 @@ class BaseGazelleApi:
 
         return resp["id"], releases
 
-    async def label_rls(self, label):
+    async def label_rls(self, label,year=None):
         """
         Get all the torrent groups from a label on site.
         All groups without a FLAC will be highlighted.
         """
-        first_request = await self.request("browse", remasterrecordlabel=label)
+        params={'remasterrecordlabel':label}
+        if year:
+            params['year']=year
+        first_request = await self.request("browse", **params)
         if 'pages' in first_request.keys():
             pages = first_request['pages']
         else:
@@ -187,11 +190,12 @@ class BaseGazelleApi:
         # Three is an arbitrary (low) number.
         # Hits to the site are slow because of rate limiting.
         # Should probably be spun out into a pagnation function at some point.
-        for i in range(1, max(3, pages)):
-            new_results = await self.request("browse", remasterrecordlabel=label, page=str(i))
+        for i in range(2, max(3, pages)):
+            params['page']=str(i)
+            new_results = await self.request("browse", **params)
             all_results += new_results['results']
-
-        resp2 = await self.request("browse", recordlabel=label)
+        params['page']="1"
+        resp2 = await self.request("browse", **params)
         all_results = all_results + resp2["results"]
         releases = []
         for group in all_results:
@@ -288,9 +292,10 @@ class BaseGazelleApi:
                     f"Site upload failed: {match[1]} ({resp.status_code})")
         if 'requests.php' in resp.url:
             try:
+                torrent_id=self.parse_torrent_id_from_filled_request_page(resp.text)
                 click.secho(f"Filled request:{resp.url}", fg="green")
-                return self.parse_torrent_id_from_filled_request_page(resp.text)
-            except TypeError:
+                return torrent_id
+            except (TypeError, ValueError):
                 soup = BeautifulSoup(resp.text, "html.parser")
                 error=soup.find('h2',text='Error')
                 if error:
@@ -414,8 +419,12 @@ class BaseGazelleApi:
         soup = BeautifulSoup(text, "html.parser")
         for entry in soup.find_all("span", class_="log_upload"):
             torrent_id = entry.find("a")['href'][23:]
-            torrent_string = re.findall(
-                "\((.*?)\) \(", entry.find("a").next_sibling)[0].split(" - ")
+            try:
+                #it having class log_upload is no guarantee that is what it is. Nice one log.
+                torrent_string = re.findall(
+                    "\((.*?)\) \(", entry.find("a").next_sibling)[0].split(" - ")
+            except:
+                continue
             artist = torrent_string[0]
             if len(torrent_string) > 1:
                 title = torrent_string[1]
