@@ -107,14 +107,16 @@ class DeezerBase(BaseScraper):
         album_id = self.parse_release_id(url)
         try:
             data = await self.get_json(f"/album/{album_id}", params=params)
-            data["tracklist"] = await self.get_tracks(f"/album/{album_id}", params)
+            internal_data= await self.get_internal_api_data(f"/album/{album_id}", params)
+            data["tracklist"] = self.get_tracks(internal_data)
+            data["cover_xl"] = self.get_cover(internal_data)
             return data
         except json.decoder.JSONDecodeError as e:
             raise ScrapeError(f"Deezer page did not return valid JSON.") from e
         except (KeyError, ScrapeError) as e:
             raise ScrapeError(f"Failed to grab metadata for {url}.") from e
-
-    async def get_tracks(self, url, params=None):
+    
+    async def get_internal_api_data(self, url, params=None):
         track_data = await loop.run_in_executor(
             None, lambda: self.sesh.get(self.site_url + url, params=(params or {}))
         )
@@ -126,4 +128,11 @@ class DeezerBase(BaseScraper):
             raise ScrapeError("Failed to scrape track data.")
         raw = re.sub(r"{(\s*)type\: +\'([^\']+)\'", r'{\1type: "\2"', r[1])
         raw = re.sub("\t+([^:]+): ", r'"\1":', raw)
-        return json.loads(raw)["SONGS"]["data"]
+        return json.loads(raw)
+    def get_tracks(self, internal_data):
+        return internal_data["SONGS"]["data"]
+
+    def get_cover(self, internal_data):
+        "This uses a hardcoded url. Hope the dns url doesn't change."
+        artwork_code=internal_data["DATA"]["ALB_PICTURE"]
+        return f'https://e-cdns-images.dzcdn.net/images/cover/{artwork_code}/1000x1000-000000-100-0-0.jpg'
