@@ -105,7 +105,7 @@ loop = asyncio.get_event_loop()
               help=f'Pass a request URL or ID')
 @click.option("--spectrals-after", "-a",
               is_flag=True,
-              help=f'Assess/ host / report spectrals after upload')
+              help=f'Assess / upload / report spectrals after torrent upload')
 def up(
         path,
         group_id,
@@ -151,7 +151,7 @@ def upload(
     source_url=None,
     searchstrs=None,
     request_id=None,
-    spectrals_after=True,
+    spectrals_after=False,
 ):
     """Upload an album folder to Gazelle Site"""
     path = os.path.abspath(path)
@@ -213,7 +213,7 @@ def upload(
         spectral_urls = handle_spectrals_upload_and_deletion(
             spectrals_path, spectral_ids)
 
-    remaining_gazelle_sites = config.TRACKER_LIST
+    remaining_gazelle_sites = list(config.TRACKER_LIST)
     tracker = gazelle_site.site_code
     while True:
         # Loop until we don't want to upload to any more sites.
