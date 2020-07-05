@@ -77,6 +77,11 @@ class BaseGazelleApi:
     @property
     def announce(self):
         return f"{self.tracker_url}/{self.passkey}/announce"
+    
+
+    def request_url(self,id):
+        "Given a request ID return a request URL"
+        return f"{self.base_url}/requests.php?action=view&id={id}"
 
     def authenticate(self):
         """Make a request to the site API with the saved cookie and get our authkey."""
@@ -130,6 +135,7 @@ class BaseGazelleApi:
         return await self.request("torrentgroup", id=group_id)
 
     async def get_request(self, id):
+        """Get information about a request."""
         data = {"id": id}
         return await self.request("request", **data)
 
@@ -200,9 +206,12 @@ class BaseGazelleApi:
         releases = []
         for group in all_results:
             if not group["artist"]:
-                artist = html.unescape(
-                    compile_artists(group["artists"], group["releaseType"])
-                )
+                if 'artists' in group.keys():
+                    artist = html.unescape(
+                        compile_artists(group["artists"], group["releaseType"])
+                    )
+                else:
+                    artist=""
             else:
                 artist = group["artist"]
             releases.append(
@@ -267,8 +276,8 @@ class BaseGazelleApi:
                 raise RequestError(f"API upload failed: {resp['error']}")
             elif resp["status"] == "success":
                 if 'requestid' in resp['response'].keys() and resp['response']['requestid']:
-                    click.secho("Filled request:"
-                                f"{self.base_url}/requests.php?action=view&id={resp['response']['requestid']}", fg="green")
+                    click.secho("Filled request: "
+                                +self.request_url(resp['response']['requestid']), fg="green")
                 return resp["response"]["torrentid"]
         except TypeError:
             raise RequestError(f"API upload failed, response text: {resp.text}")
@@ -293,7 +302,7 @@ class BaseGazelleApi:
         if 'requests.php' in resp.url:
             try:
                 torrent_id=self.parse_torrent_id_from_filled_request_page(resp.text)
-                click.secho(f"Filled request:{resp.url}", fg="green")
+                click.secho(f"Filled request: {resp.url}", fg="green")
                 return torrent_id
             except (TypeError, ValueError):
                 soup = BeautifulSoup(resp.text, "html.parser")

@@ -58,7 +58,7 @@ def print_request_results(gazelle_site, results, searchstr):
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for r_index, r in enumerate(results):
             try:
-                url = f'{gazelle_site.base_url}/requests.php?id={r["requestId"]}'
+                url = gazelle_site.request_url(r["requestId"])
                 # User doesn't get to pick a zero index
                 click.echo(f" {r_index+1:02d} >> {url} | ", nl=False)
                 if len(r['artists'][0])>3:
@@ -82,7 +82,7 @@ def _print_request_details(gazelle_site, req):
     """Print request details."""
     group_info = {}
     click.secho("\nSelected Request:")
-    click.secho(f"{gazelle_site.base_url}/requests.php?id={req['requestId']} ")
+    click.secho(gazelle_site.request_url(req['requestId']))
     click.secho(f" {req['artist']}", fg="cyan", nl=False)
     click.secho(f" - {req['title']} ", fg="cyan", nl=False)
     click.secho(f"({req['year']})", fg="yellow")
