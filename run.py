@@ -14,6 +14,6 @@ if __name__ == '__main__':
     except (UploadError, FilterError) as e:
         click.secho(str(e), fg='red', bold=True)
     except LoginError:
-        click.secho(f'Failed to log into RED', fg='red')
+        click.secho(f'Failed to log in. Is your session cookie up to date?', fg='red')
     except ImportError as e:
         click.secho(f'You are missing required dependencies: {e}', fg='red')
