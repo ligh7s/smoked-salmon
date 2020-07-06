@@ -44,7 +44,10 @@ def dupe_check_recent_torrents(gazelle_site,searchstrs):
     return hits
 
 def print_recent_upload_results(gazelle_site,recent_uploads,searchstr):
-    print(searchstr)
+    """Prints any recent uploads.
+    Currently hard limited to 5.
+    Realistically they are probably only interested in 1.
+    These results can't be used for group selection because the log doesn't give us group id"""
     if recent_uploads:
             click.secho(
             f'\nFound similar recent uploads in the {gazelle_site.site_string} log: ',
@@ -84,7 +87,7 @@ def get_search_results(gazelle_site, searchstrs):
     for releases in loop.run_until_complete(asyncio.gather(*tasks)):
         for release in releases['results']:
             if release not in results:
-                    results.append(release)
+                results.append(release)
     return results
 
 
@@ -206,7 +209,6 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
 def _print_torrents(gazelle_site, group_id, rset):
     """Print the torrents that are a part of the torrent group."""
     group_info = {}
-    # Be nice to show the artist(s) here but it isn't the same format if they came from a URL
     click.secho(f"\nSelected ID: {rset['groupId']} ", nl=False)
     click.secho(f" - {rset['groupName']} ", fg="cyan", nl=False)
     click.secho(f" - {rset['artist']} ", fg="cyan", nl=False)

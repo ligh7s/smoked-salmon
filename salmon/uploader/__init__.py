@@ -219,7 +219,7 @@ def upload(
         # Loop until we don't want to upload to any more sites.
         if not tracker:
             if spectrals_after:
-                # Here we are doing the spectrals for the first torrent
+                # Here we are checking the spectrals after uploading to the first site
                 # if they were not done before.
                 lossy_master, lossy_comment, spectral_urls = post_upload_spectral_check(
                     gazelle_site, path, torrent_id, None, track_data, source, source_url)

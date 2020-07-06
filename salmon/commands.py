@@ -178,7 +178,7 @@ def checkspecs(tracker, torrent_id, path):
     path = os.path.join(path, html.unescape(req['torrent']['filePath']))
     source_url = None
     source = req['torrent']['media']
-    rich.print(f"Generating spectrals for {source} sourced: {path}")
+    click.echo(f"Generating spectrals for {source} sourced: {path}")
     track_data = gather_audio_info(path)
     post_upload_spectral_check(gazelle_site, path, torrent_id,
                                None, track_data, source, source_url)
