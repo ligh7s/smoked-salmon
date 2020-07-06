@@ -1,6 +1,7 @@
 # smoked-salmon
 
-A tool to assist with finding music and uploading it to RED.
+This is a fork of smoked-salmon that supports multiple trackers. Intend to merge back into main at some point soon (tm). Fork also has a few other newer features.
+
 
 All information pertaining to its use can be found in the wiki.
 
