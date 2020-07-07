@@ -13,5 +13,5 @@ then you will be prompted to choose each time you use the script.'''
 DEFAULT_TRACKER = 'RED'
 RED_SESSION = 'get-from-site-cookie' #Required for now. (waiting on reports api support)
 OPS_SESSION = 'get-from-site-cookie'
-RED_API_KEY = 'red-api-key' #Needs uploading privileges. Optional for now. Some things still use session.
+RED_API_KEY = 'red-api-key-needs-uploading-privileges' #Optional FOR NOW
 TRACKER_LIST=['RED','OPS'] #Remove one of these if you don't want multi-tracker support.

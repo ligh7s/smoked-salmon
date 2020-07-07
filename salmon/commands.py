@@ -137,7 +137,7 @@ def compress(path):
               default=None,
               help="Torrent id or URL, tracker from URL will overule -t flag.")
 @click.option("--tracker", "-t",
-              help=f'Tracker choices: ({"/".join(salmon.trackers.tracker_list)})')
+              help=f'Tracker choices: ({"/".join(config.TRACKER_LIST)})')
 @click.argument(
     "path", type=click.Path(exists=True, file_okay=False, resolve_path=True), nargs=1, default=".",
 )
@@ -159,9 +159,9 @@ def checkspecs(tracker, torrent_id, path):
         )
     if "/torrents.php" in torrent_id:
         base_url = parse.urlparse(torrent_id).netloc
-        if base_url in salmon.trackers.tracker_url_code_map.keys():
+        if base_url in salmon.trackers.tracker_urls.keys():
             # this will overide -t tracker
-            tracker = salmon.trackers.tracker_url_code_map[base_url]
+            tracker = salmon.trackers.tracker_urls[base_url]
         else:
             click.echo('Unrecognised tracker!')
             raise click.Abort

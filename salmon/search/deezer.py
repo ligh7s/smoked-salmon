@@ -8,6 +8,8 @@ from ratelimit import limits, sleep_and_retry
 
 
 class Searcher(DeezerBase, SearchMixin):
+    # @sleep_and_retry
+    # @limits(49,5)
     async def search_releases(self, searchstr, limit):
         releases = {}
         resp = await self.get_json("/search/album", params={"q": searchstr})
@@ -60,13 +62,12 @@ class Searcher(DeezerBase, SearchMixin):
 
 
     async def get_label_releases(self, labelstr, maximum=0,year=None):
-        """Gets all the albums released by a label up to a total number.
-        Year filtering doesn't actually work."""
+        """Gets all the albums released by a label up to a total number."""
         if year:
             yearstr="year='"+year+"'"
         else:
             yearstr=""
-        url_str = f"/search/album&q=label:'{labelstr}' {yearstr}/albums"
+        url_str = f"/search/album&q=label:'{labelstr}'{yearstr}/albums"
         resp = await self.get_json(url_str)
         albums = []
         i = 0

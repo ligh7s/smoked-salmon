@@ -6,6 +6,8 @@ from difflib import SequenceMatcher as SM
 import click
 
 
+
+
 from salmon.common import RE_FEAT, make_searchstrs
 from salmon.errors import AbortAndDeleteFolder
 from salmon.errors import RequestError
@@ -13,52 +15,48 @@ from salmon import config
 
 loop = asyncio.get_event_loop()
 
-
-def dupe_check_recent_torrents(gazelle_site, searchstrs):
+def dupe_check_recent_torrents(gazelle_site,searchstrs):
     """Checks the site log for recent uploads similar to ours.
     It may be a little slow as it has to fetch multiple pages of the log
     It also has to do a string distance comparison for each result"""
-    searchstr = searchstrs[0]
-    recent_uploads = gazelle_site.get_uploads_from_log()
-    # Each upload in this list is best guess at (id,artist,title) from log
-    hits = []
-    seen = []
+    searchstr=searchstrs[0]
+    recent_uploads=gazelle_site.get_uploads_from_log()
+    #Each upload in this list is best guess at (id,artist,title) from log
+    hits=[]
+    seen=[]
     for upload in recent_uploads:
-        # We don't care about different torrents from the same release.
-        torrent_str = (upload[1] + upload[2])
+        #We don't care about different torrents from the same release.
+        torrent_str=(upload[1]+upload[2])
         if torrent_str in seen:
             continue
         seen.append(torrent_str)
-        artist = upload[1]
-        title = upload[2]
-        artist = [[artist, "main"]]
-        possible_comparisons = generate_dupe_check_searchstrs(artist, title)
-        ratio = 0
+        artist=upload[1]
+        title=upload[2]
+        artist=[[artist,"main"]]
+        possible_comparisons=generate_dupe_check_searchstrs(artist,title)
+        ratio=0
         for comparison_string in possible_comparisons:
-            new_ratio = SM(None, searchstr, comparison_string).ratio()
-            ratio = max(ratio, new_ratio)
-        # could be a value in the config.
-        if ratio > .5:
+            new_ratio=SM(None, searchstr, comparison_string).ratio()
+            ratio=max(ratio,new_ratio)
+        #should be a value in the config.
+        if ratio>.5:
             hits.append(upload)
     return hits
 
-
-def print_recent_upload_results(gazelle_site, recent_uploads, searchstr):
+def print_recent_upload_results(gazelle_site,recent_uploads,searchstr):
     """Prints any recent uploads.
     Currently hard limited to 5.
-    Realistically we are probably only interested in 1.
-    These results can't be used for group selection because the log doesn't give us a group id"""
+    Realistically they are probably only interested in 1.
+    These results can't be used for group selection because the log doesn't give us group id"""
     if recent_uploads:
-        click.secho(
+            click.secho(
             f'\nFound similar recent uploads in the {gazelle_site.site_string} log: ',
             fg="red",
             nl=False
-        )
-        click.secho(f" (searchstrs: {searchstr})", bold=True)
-        for u in recent_uploads[:5]:
-            click.secho(
-                f'{u[1]} - {u[2]} | {gazelle_site.base_url}/torrents.php?torrentid={u[0]}', fg="cyan")
-
+            )
+            click.secho(f" (searchstrs: {searchstr})", bold=True)
+            for u in recent_uploads[:5]:
+                click.secho(f'{u[1]} - {u[2]} | {gazelle_site.base_url}/torrents.php?torrentid={u[0]}',fg="cyan")
 
 def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
     """
@@ -68,10 +66,9 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
     """
     results = get_search_results(gazelle_site, searchstrs)
     if not results and config.CHECK_RECENT_UPLOADS:
-        recent_uploads = dupe_check_recent_torrents(gazelle_site, searchstrs)
-        print_recent_upload_results(
-            gazelle_site, recent_uploads, " / ".join(searchstrs))
-    else:
+        recent_uploads=dupe_check_recent_torrents(gazelle_site,searchstrs)
+        print_recent_upload_results(gazelle_site,recent_uploads," / ".join(searchstrs))
+    else:    
         print_search_results(gazelle_site, results, " / ".join(searchstrs))
     group_id = _prompt_for_group_id(gazelle_site, results, offer_deletion)
     if group_id:
@@ -81,18 +78,18 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
         return None
     return group_id
 
-
 def get_search_results(gazelle_site, searchstrs):
     results = []
     tasks = [
-        gazelle_site.request("browse", searchstr=searchstr)
-        for searchstr in searchstrs
-    ]
+                gazelle_site.request("browse", searchstr=searchstr)
+                for searchstr in searchstrs
+            ]
     for releases in loop.run_until_complete(asyncio.gather(*tasks)):
         for release in releases['results']:
             if release not in results:
                 results.append(release)
     return results
+
 
 
 def generate_dupe_check_searchstrs(artists, album, catno=None):
@@ -150,7 +147,7 @@ def print_search_results(gazelle_site, results, searchstr):
             f'\nNo groups found on {gazelle_site.site_string} matching this release.',
             fg="green",
             nl=False
-        )
+        )    
     else:
         click.secho(
             f'\nResults matching this release were found on {gazelle_site.site_string}: ',

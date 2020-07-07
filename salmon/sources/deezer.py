@@ -117,9 +117,6 @@ class DeezerBase(BaseScraper):
             raise ScrapeError(f"Failed to grab metadata for {url}.") from e
     
     async def get_internal_api_data(self, url, params=None):
-        """Deezer puts some things in an api that isn't public facing.
-        Like track information and album art before a release is available.
-        """
         track_data = await loop.run_in_executor(
             None, lambda: self.sesh.get(self.site_url + url, params=(params or {}))
         )

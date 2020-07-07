@@ -99,7 +99,7 @@ loop = asyncio.get_event_loop()
 )
 @click.option("--tracker", "-t",
               callback=salmon.trackers.validate_tracker,
-              help=f'Uploading Choices: ({"/".join(salmon.trackers.tracker_list)})')
+              help=f'Uploading Choices: ({"/".join(config.TRACKER_LIST)})')
 @click.option("--request", "-r",
               default=None,
               help=f'Pass a request URL or ID')
@@ -115,11 +115,11 @@ def up(
         tracker,
         request,
         spectrals_after):
-    """Command to upload an album folder to a Gazelle Site."""
+    """Upload an album folder to Gazelle Site"""
     gazelle_site = salmon.trackers.get_class(tracker)()
     if request:
+        #This is isn't handled by click because we need the tracker sorted first.
         request = salmon.trackers.validate_request(gazelle_site, request)
-        # This is isn't handled by click because we need the tracker sorted first.
     print_preassumptions(gazelle_site, path, group_id,
                          source, lossy, spectrals, encoding, spectrals_after)
     upload(
@@ -153,8 +153,7 @@ def upload(
     request_id=None,
     spectrals_after=False,
 ):
-    """Upload an album folder to Gazelle Site
-    Offer the choice to upload to another tracker after completion."""
+    """Upload an album folder to Gazelle Site"""
     path = os.path.abspath(path)
     if not source:
         source = _prompt_source()
@@ -214,8 +213,7 @@ def upload(
         spectral_urls = handle_spectrals_upload_and_deletion(
             spectrals_path, spectral_ids)
 
-    # Shallow copy to avoid errors on multiple uploads in one session.
-    remaining_gazelle_sites = list(salmon.trackers.tracker_list)
+    remaining_gazelle_sites = list(config.TRACKER_LIST)
     tracker = gazelle_site.site_code
     while True:
         # Loop until we don't want to upload to any more sites.
@@ -275,7 +273,7 @@ def upload(
         tracker = None
         request_id = None
         if not remaining_gazelle_sites:
-            return click.secho(f"\nDone uploading this release.", fg="green")
+            return click.secho(f"\nDone uploading this release.", fg="green")      
 
 
 def edit_metadata(path, tags, metadata, source, rls_data, recompress):
