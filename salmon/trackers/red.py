@@ -10,9 +10,10 @@ from salmon.errors import (
     RateLimitError,
     RequestError,
     RequestFailedError,
-)#Do I understand imports?
+)
 
 loop = asyncio.get_event_loop()
+
 
 class RedApi(BaseGazelleApi):
     def __init__(self):
@@ -40,7 +41,7 @@ class RedApi(BaseGazelleApi):
     async def report_lossy_master(self, torrent_id, comment, source):
         """Automagically report a torrent for lossy master/web approval.
          Use LWA if the torrent is web, otherwise LMA."""
-        
+
         url = self.base_url + "/reportsv2.php"
         params = {"action": "takereport"}
         type_ = "lossywebapproval" if source == "WEB" else "lossyapproval"

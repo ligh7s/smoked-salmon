@@ -43,26 +43,14 @@ DEFAULT_VALUES = {
     "LMA_COMMENT_IN_T_DESC": False,
     "USE_UPC_AS_CATNO": True,
     "DEFAULT_TRACKER": False,
-    "RED_API_KEY":False,
-    "ALWAYS_ASK_FOR_REQUEST_FILL":False,
-    "CHECK_RECENT_UPLOADS":True,
+    "RED_API_KEY": False,
+    "ALWAYS_ASK_FOR_REQUEST_FILL": False,
+    "CHECK_RECENT_UPLOADS": True,
 }
 
 
 class ConfigError(Exception):
     pass
-
-
-if not hasattr(user_config, 'TRACKER_LIST'):
-    DEFAULT_VALUES['TRACKER_LIST'] = []
-    #setattr(user_config,'TRACKERS',{})
-    if hasattr(user_config, 'RED_SESSION'):
-        DEFAULT_VALUES['TRACKER_LIST'].append('RED')
-    if hasattr(user_config, 'OPS_SESSION'):
-        DEFAULT_VALUES['TRACKER_LIST'].append('OPS')
-    if len(DEFAULT_VALUES['TRACKER_LIST']) == 0:
-        raise ConfigError(f"You need a tracker session in your config!")
-
 
 
 class Config:

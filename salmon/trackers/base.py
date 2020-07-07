@@ -50,9 +50,10 @@ SearchReleaseData = namedtuple(
     ["lossless", "lossless_web", "year", "artist", "album", "release_type", "url"],
 )
 
+
 class BaseGazelleApi:
     def __init__(self):
-        "Base init class shouldn't really be geting used"
+        "Base init class. Will generally be overridden by the specific site class."
         self.headers = {
             "Connection": "keep-alive",
             "Cache-Control": "max-age=0",
@@ -77,9 +78,8 @@ class BaseGazelleApi:
     @property
     def announce(self):
         return f"{self.tracker_url}/{self.passkey}/announce"
-    
 
-    def request_url(self,id):
+    def request_url(self, id):
         "Given a request ID return a request URL"
         return f"{self.base_url}/requests.php?action=view&id={id}"
 
@@ -99,12 +99,12 @@ class BaseGazelleApi:
     async def request(self, action, **kwargs):
         """
         Make a request to the site API, accomodating the rate limit.
-        This method will create a counter and a timestamp, and ensure that
+        This uses the ratelimit library to ensure that
         the 5 requests / 10 seconds rate limit isn't violated, while allowing
         short bursts of requests without a 2 second wait after each one
         (at the expense of a potentially longer wait later).
         """
-        
+
         url = self.base_url + "/ajax.php"
         params = {"action": action, **kwargs}
         try:
@@ -179,14 +179,14 @@ class BaseGazelleApi:
 
         return resp["id"], releases
 
-    async def label_rls(self, label,year=None):
+    async def label_rls(self, label, year=None):
         """
         Get all the torrent groups from a label on site.
         All groups without a FLAC will be highlighted.
         """
-        params={'remasterrecordlabel':label}
+        params = {'remasterrecordlabel': label}
         if year:
-            params['year']=year
+            params['year'] = year
         first_request = await self.request("browse", **params)
         if 'pages' in first_request.keys():
             pages = first_request['pages']
@@ -195,12 +195,12 @@ class BaseGazelleApi:
         all_results = first_request['results']
         # Three is an arbitrary (low) number.
         # Hits to the site are slow because of rate limiting.
-        # Should probably be spun out into a pagnation function at some point.
+        # Should probably be spun out into its own pagnation function at some point.
         for i in range(2, max(3, pages)):
-            params['page']=str(i)
+            params['page'] = str(i)
             new_results = await self.request("browse", **params)
             all_results += new_results['results']
-        params['page']="1"
+        params['page'] = "1"
         resp2 = await self.request("browse", **params)
         all_results = all_results + resp2["results"]
         releases = []
@@ -211,7 +211,7 @@ class BaseGazelleApi:
                         compile_artists(group["artists"], group["releaseType"])
                     )
                 else:
-                    artist=""
+                    artist = ""
             else:
                 artist = group["artist"]
             releases.append(
@@ -232,14 +232,15 @@ class BaseGazelleApi:
         releases = list({r.url: r for r in releases}.values())  # Dedupe
 
         return releases
-        
+
     async def fetch_log(self, page):
-        """Fetch a page of the log. No search. Search envokes the sphynx"""
+        """Fetch a page of the log. No search. Search envokes the sphynx
+        Doesn't use the API as there is no API endpoint."""
         url = f'{self.base_url}/log.php'
         resp = await loop.run_in_executor(
             None,
             lambda: self.session.get(
-                url, params={'page':page}, headers=self.headers
+                url, params={'page': page}, headers=self.headers
             )
         )
         return resp
@@ -249,15 +250,16 @@ class BaseGazelleApi:
         url = f'{self.base_url}/log.php'
         recent_uploads = []
         tasks = [
-                self.fetch_log(i)
-                for i in range(1,max_pages)
-            ]
+            self.fetch_log(i)
+            for i in range(1, max_pages)
+        ]
         for page in loop.run_until_complete(asyncio.gather(*tasks)):
             recent_uploads += self.parse_uploads_from_log_html(page.text)
         return recent_uploads
 
     async def api_key_upload(self, data, files):
-        """Attempt to upload a torrent to the site."""
+        """Attempt to upload a torrent to the site.
+        using the API"""
         url = self.base_url + "/ajax.php?action=upload"
         data["auth"] = self.authkey
         '''Shallow copy.
@@ -277,12 +279,14 @@ class BaseGazelleApi:
             elif resp["status"] == "success":
                 if 'requestid' in resp['response'].keys() and resp['response']['requestid']:
                     click.secho("Filled request: "
-                                +self.request_url(resp['response']['requestid']), fg="green")
+                                + self.request_url(resp['response']['requestid']), fg="green")
                 return resp["response"]["torrentid"]
         except TypeError:
             raise RequestError(f"API upload failed, response text: {resp.text}")
 
     async def site_page_upload(self, data, files):
+        """Attempt to upload a torrent to the site.
+        using the upload.php"""
         url = self.base_url + "/upload.php"
         data["auth"] = self.authkey
         resp = await loop.run_in_executor(
@@ -301,14 +305,14 @@ class BaseGazelleApi:
                     f"Site upload failed: {match[1]} ({resp.status_code})")
         if 'requests.php' in resp.url:
             try:
-                torrent_id=self.parse_torrent_id_from_filled_request_page(resp.text)
+                torrent_id = self.parse_torrent_id_from_filled_request_page(resp.text)
                 click.secho(f"Filled request: {resp.url}", fg="green")
                 return torrent_id
             except (TypeError, ValueError):
                 soup = BeautifulSoup(resp.text, "html.parser")
-                error=soup.find('h2',text='Error')
+                error = soup.find('h2', text='Error')
                 if error:
-                    error_message=error.parent.parent.find('p').text
+                    error_message = error.parent.parent.find('p').text
                 raise RequestError(f"Request fill failed: {error_message}")
         try:
             return self.parse_most_recent_torrent_and_group_id_from_group_page(
@@ -318,7 +322,8 @@ class BaseGazelleApi:
             raise RequestError(f"Site upload failed, response text: {resp.text}")
 
     async def upload(self, data, files):
-        """Upload a torrent using upload.php or API key."""
+        """Upload a torrent using upload.php
+        or the API depending on whether an API key is set."""
         if hasattr(self, 'api_key'):
             return await self.api_key_upload(data, files)
         else:
@@ -329,6 +334,7 @@ class BaseGazelleApi:
         url = self.base_url + "/reportsv2.php"
         params = {"action": "takereport"}
         # type_ = "lossywebapproval" if source == "WEB" else "lossyapproval" (only works on RED)
+        # this is has a RED specific implementation.
         type_ = "lossyapproval"
         data = {
             "auth": self.authkey,
@@ -349,48 +355,50 @@ class BaseGazelleApi:
         raise RequestError(
             f"Failed to report the torrent for lossy master, code {r.status_code}."
         )
-    async def append_to_torrent_description(self,torrent_id,description_additon):
-        'Adds to the start of an individual torrent description'
+
+    async def append_to_torrent_description(self, torrent_id, description_additon):
+        """Adds to the start of an individual torrent description
+        Currently not supported by the API"""
         current_details = await self.request("torrent", id=torrent_id)
-        new_data={'action':'takeedit',
-                'torrentid': torrent_id,
-                'type': 1,
-                "groupremasters": 0,
-                "remaster_year": current_details['torrent']['remasterYear'],
-                "remaster_title": current_details['torrent']['remasterTitle'],
-                "remaster_record_label": current_details['torrent']['remasterRecordLabel'],
-                "remaster_catalogue_number": current_details['torrent']['remasterCatalogueNumber'],
-                "format": current_details['torrent']['format'],
-                "bitrate": current_details['torrent']['encoding'],
-                "other_bitrate": "",
-                "media": current_details['torrent']['media'],
-                "release_desc": description_additon+current_details['torrent']['description']
-        }
-        
-        url=self.base_url+'/torrents.php'
+        new_data = {'action': 'takeedit',
+                    'torrentid': torrent_id,
+                    'type': 1,
+                    "groupremasters": 0,
+                    "remaster_year": current_details['torrent']['remasterYear'],
+                    "remaster_title": current_details['torrent']['remasterTitle'],
+                    "remaster_record_label": current_details['torrent']['remasterRecordLabel'],
+                    "remaster_catalogue_number": current_details['torrent']['remasterCatalogueNumber'],
+                    "format": current_details['torrent']['format'],
+                    "bitrate": current_details['torrent']['encoding'],
+                    "other_bitrate": "",
+                    "media": current_details['torrent']['media'],
+                    "release_desc": description_additon + current_details['torrent']['description']
+                    }
+
+        url = self.base_url + '/torrents.php'
         new_data["auth"] = self.authkey
         resp = await loop.run_in_executor(
             None,
-            lambda:self.session.post(
+            lambda: self.session.post(
                 url, data=new_data, headers=self.headers
-         ),
+            ),
         )
         soup = BeautifulSoup(resp.text, "html.parser")
-        edit_error=soup.find('h2',text='Error')
+        edit_error = soup.find('h2', text='Error')
         if edit_error:
-            error_message=edit_error.parent.parent.find('p').text
+            error_message = edit_error.parent.parent.find('p').text
             raise RequestError(
                 f"Failed to edit torrent: {error_message}"
             )
         else:
             click.secho(
-                    "Added spectrals to the torrent description.",
-                    fg="green",
-                )
+                "Added spectrals to the torrent description.",
+                fg="green",
+            )
 
-    """The following three parising functions are part of the gazelle class
+    """The following three parsing functions are part of the gazelle class
     in order that they be easily overwritten in the derivative site classes.
-    Not because they depend on anything from the class"""
+    It is not because they depend on anything from the class"""
 
     def parse_most_recent_torrent_and_group_id_from_group_page(self, text):
         """
@@ -410,7 +418,7 @@ class BaseGazelleApi:
     def parse_torrent_id_from_filled_request_page(self, text):
         """
         Given the HTML (ew) response from filling a request, 
-        find the filling torrent
+        find the filling torrent (hopefully our upload)
         """
         torrent_ids = []
         soup = BeautifulSoup(text, "html.parser")
@@ -423,13 +431,14 @@ class BaseGazelleApi:
         return max(torrent_ids)
 
     def parse_uploads_from_log_html(self, text):
-        "Parses a log page and returns best guess at (torrent id, 'Artist', 'title') tuples"
+        """Parses a log page and returns best guess at
+         (torrent id, 'Artist', 'title') tuples for uploads"""
         log_uploads = []
         soup = BeautifulSoup(text, "html.parser")
         for entry in soup.find_all("span", class_="log_upload"):
             torrent_id = entry.find("a")['href'][23:]
             try:
-                #it having class log_upload is no guarantee that is what it is. Nice one log.
+                # it having class log_upload is no guarantee that is what it is. Nice one log.
                 torrent_string = re.findall(
                     "\((.*?)\) \(", entry.find("a").next_sibling)[0].split(" - ")
             except:
