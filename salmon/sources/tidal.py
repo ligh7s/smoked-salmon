@@ -15,7 +15,7 @@ class TidalBase(BaseScraper):
         r"^https*:\/\/.*?(?:tidal|wimpmusic)\.com.*?\/(album|track|playlist)\/([0-9a-z\-]+)"
     )
     release_format = "/album/{rls_id}"
-    get_params = {"token": config.TIDAL_TOKEN}
+    get_params = {"token": "hZ9wuySZCmpLLiui"}
 
     def __init__(self):
         self.country_code = None
