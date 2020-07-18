@@ -10,6 +10,7 @@ from salmon.common.figles import (  # noqa: F401
     compress,
     create_relative_path,
     get_audio_files,
+    alac_to_flac
 )
 from salmon.common.regexes import (  # noqa: F401
     parse_copyright,

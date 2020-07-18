@@ -48,3 +48,22 @@ def compress(filepath):
             stderr=devnull,
         )
     os.rename(f"{filepath}.new", filepath)
+
+def alac_to_flac(filepath):
+        """Convert alac to flac"""
+        with open(os.devnull, "w") as devnull:
+            subprocess.call(
+                [
+                    "ffmpeg",
+                    #"-y",
+                    f"-i",
+                    filepath,
+                    "-acodec",
+                    "flac",
+                    f"{filepath}.flac",
+                    #"--delete-input-file",
+                ],
+                stdout=devnull,
+                stderr=devnull,
+            )
+        os.rename(f"{filepath}.flac", filepath)
