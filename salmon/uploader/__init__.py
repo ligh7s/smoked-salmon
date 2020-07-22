@@ -48,6 +48,7 @@ from salmon.uploader.upload import (
     prepare_and_upload,
     report_lossy_master,
 )
+from salmon.checks.upconverts import upload_upconvert_test
 
 loop = asyncio.get_event_loop()
 
@@ -189,6 +190,15 @@ def upload(
     )
 
     try:
+        if rls_data["encoding"] == "24bit Lossless" and click.confirm(
+            click.style(
+                "24bit detected. Do you want to check whether might be upconverted?",
+                fg="magenta",
+            ),
+            default=True,
+        ):
+            upload_upconvert_test(path)
+
         if group_id is None:
             searchstrs = generate_dupe_check_searchstrs(
                 rls_data["artists"], rls_data["title"], rls_data["catno"]
@@ -197,7 +207,7 @@ def upload(
 
         if spectrals_after:
             lossy_master = False
-            # We tell the uploader not to worry about it being lossy.
+            # We tell the uploader not to worry about it being lossy until later.
         else:
             lossy_master, spectral_ids = check_spectrals(
                 path, audio_info, lossy, spectrals

@@ -8,6 +8,39 @@ import mutagen
 
 from salmon.errors import NotAValidInputFile
 
+def upload_upconvert_test(path):
+    any_upconverts=test_upconverted(path)
+    if any_upconverts:
+        if click.confirm(
+            click.style(
+                "Possible upconverts detected. Would you like to quit uploading?",
+                fg="red",
+            ),
+            default=True,
+        ):
+            raise click.Abort
+    else:
+        click.secho(
+            click.style(
+                "No upconverts detected (This is not a 100 percent accurate process).",
+                fg="green",
+            ),
+        )
+
+def test_upconverted(path):
+    if os.path.isfile(path):
+        return _upconvert_check_handler(path)
+    elif os.path.isdir(path):
+        any_upconverts = False
+        for root, _, figles in os.walk(path):
+            for f in figles:
+                if f.lower().endswith(".flac"):
+                    filepath = os.path.join(root, f)
+                    click.secho(f"\nChecking {filepath}...", fg="cyan")
+                    if _upconvert_check_handler(filepath):
+                        any_upconverts = True
+        return any_upconverts
+
 
 def _upconvert_check_handler(filepath):
     try:
@@ -28,6 +61,7 @@ def _upconvert_check_handler(filepath):
                 f"Wasted bits: {wasted_bits}/{bitdepth}",
                 fg="green",
             )
+    return upconv
 
 
 def check_upconvert(filepath):

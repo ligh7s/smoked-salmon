@@ -8,7 +8,7 @@ from heybrochecklog.translate import translate_log
 
 from salmon.checks.integrity import check_integrity, format_integrity
 from salmon.checks.mqa import check_mqa
-from salmon.checks.upconverts import _upconvert_check_handler
+from salmon.checks.upconverts import test_upconverted
 from salmon.common import commandgroup
 
 
@@ -61,15 +61,7 @@ def _check_log(path, score_only, translate):
 @click.argument("path", type=click.Path(exists=True, resolve_path=True))
 def upconv(path):
     """Check a 24bit FLAC file for upconversion"""
-    if os.path.isfile(path):
-        _upconvert_check_handler(path)
-    elif os.path.isdir(path):
-        for root, _, figles in os.walk(path):
-            for f in figles:
-                if f.lower().endswith(".flac"):
-                    filepath = os.path.join(root, f)
-                    click.secho(f"\nChecking {filepath}...", fg="cyan")
-                    _upconvert_check_handler(filepath)
+    test_upconverted(path)
 
 
 @check.command()
