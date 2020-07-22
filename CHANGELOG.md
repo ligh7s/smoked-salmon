@@ -1,8 +1,9 @@
-CHANGELOG.md
+#Changelog
 
 Made a new file because there have been lots of changes recently.
    
 #Changes 22/07/2020
+
 ##Multi tracker support
     adds options DEFAULT_TRACKER and TRACKER_LIST (have a gander at config.py.txt example)
 	--tracker or -t option for up command. 
