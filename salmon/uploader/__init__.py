@@ -268,7 +268,7 @@ def upload(
             group_id = check_existing_group(gazelle_site, searchstrs, metadata)
 
         remaining_gazelle_sites.remove(tracker)
-        if not request_id:
+        if not request_id and config.CHECK_REQUESTS:
             request_id = check_requests(gazelle_site, searchstrs)
         torrent_id = prepare_and_upload(
             gazelle_site,

@@ -13,16 +13,16 @@ Made a new file because there have been lots of changes recently.
 
 ## Requests checkers
 Allow you to input a request id to fill as you upload. (-r)  
-Searches requests as you upload  
-Added ALWAYS_ASK_FOR_REQUEST_FILL  
-If this is set to True the script will prompt you for a request to fill even if it doesn't find any.  
+Searches requests as you upload (can be disabled with CHECK_REQUESTS=False)
+Added ALWAYS_ASK_FOR_REQUEST_FILL option which if it is set to True the script will prompt you for a request to fill even if it doesn't find any itself. 
 
 ## Added recent upload dupe check
 This is useful for special chars on recent content on RED or anything not yet showing up in search.  
 This function might be a little slow.  
 It can be disabled with CHECK_RECENT_UPLOADS=False  
 
-## Added option (USE_UPC_AS_CATNO)	to use upc as the catelouge number on site. 
+## Added option USE_UPC_AS_CATNO
+Adde an option to use upc as the catalogue number on site. 
 This option will also append the UPC to the catno field on site.  
 
 ## Spectrals afer upload option. (-a)
@@ -41,7 +41,7 @@ Use API key for upload on RED (full support still pending API coverage)
 Change the way torrent group id is picked on site.  
 Use library for rate limiting  
 Add library for rate limiting to requirements.txt  
-Scrape deezer cover internally not from public api deezer. (fixes cover fetching for new releases)  
+
 Added choice to test 24 bit flac for upconverts on upload.  
 
 

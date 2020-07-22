@@ -46,6 +46,7 @@ DEFAULT_VALUES = {
     "RED_API_KEY": False,
     "ALWAYS_ASK_FOR_REQUEST_FILL": False,
     "CHECK_RECENT_UPLOADS": True,
+    "CHECK_REQUESTS": True,
 }
 
 
