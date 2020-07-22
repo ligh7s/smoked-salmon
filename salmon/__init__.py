@@ -31,7 +31,7 @@ DEFAULT_VALUES = {
     "IMAGE_UPLOADER": "ptpimg",
     "COVER_UPLOADER": "ptpimg",
     "SPECS_UPLOADER": "mixtape",
-    "ICONS_IN_DESCRIPTIONS": True,
+    "ICONS_IN_DESCRIPTIONS": False,
     "FULLWIDTH_REPLACEMENTS": False,
     "NATIVE_SPECTRALS_VIEWER": False,
     "PROMPT_PUDDLETAG": False,
