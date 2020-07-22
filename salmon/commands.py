@@ -133,13 +133,22 @@ def compress(path):
 
 
 @commandgroup.command()
-@click.option("--torrent-id", "-i",
-              default=None,
-              help="Torrent id or URL, tracker from URL will overule -t flag.")
-@click.option("--tracker", "-t",
-              help=f'Tracker choices: ({"/".join(salmon.trackers.tracker_list)})')
+@click.option(
+    "--torrent-id",
+    "-i",
+    default=None,
+    help="Torrent id or URL, tracker from URL will overule -t flag.",
+)
+@click.option(
+    "--tracker",
+    "-t",
+    help=f'Tracker choices: ({"/".join(salmon.trackers.tracker_list)})',
+)
 @click.argument(
-    "path", type=click.Path(exists=True, file_okay=False, resolve_path=True), nargs=1, default=".",
+    "path",
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    nargs=1,
+    default=".",
 )
 def checkspecs(tracker, torrent_id, path):
     """Will check the spectrals of a given torrent based on local files.\n
@@ -150,7 +159,6 @@ def checkspecs(tracker, torrent_id, path):
         click.secho("No torrent id provided.", fg="red")
         torrent_id = click.prompt(
             click.style(
-
                 """Input a torrent id or a URL containing one. 
                 Tracker in a URL will override -t flag.""",
                 fg="magenta",
@@ -165,8 +173,9 @@ def checkspecs(tracker, torrent_id, path):
         else:
             click.echo('Unrecognised tracker!')
             raise click.Abort
-        torrent_id = int(parse.parse_qs(
-            parse.urlparse(torrent_id).query)['torrentid'][0])
+        torrent_id = int(
+            parse.parse_qs(parse.urlparse(torrent_id).query)['torrentid'][0]
+        )
     elif torrent_id.strip().isdigit():
         torrent_id = int(torrent_id)
     else:
@@ -180,5 +189,6 @@ def checkspecs(tracker, torrent_id, path):
     source = req['torrent']['media']
     click.echo(f"Generating spectrals for {source} sourced: {path}")
     track_data = gather_audio_info(path)
-    post_upload_spectral_check(gazelle_site, path, torrent_id,
-                               None, track_data, source, source_url)
+    post_upload_spectral_check(
+        gazelle_site, path, torrent_id, None, track_data, source, source_url
+    )

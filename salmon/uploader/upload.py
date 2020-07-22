@@ -37,11 +37,25 @@ def prepare_and_upload(
     if not group_id:
         cover_url = upload_cover(path)
         data = compile_data_new_group(
-            path, metadata, track_data, hybrid, cover_url, spectral_urls, lossy_comment, request_id
+            path,
+            metadata,
+            track_data,
+            hybrid,
+            cover_url,
+            spectral_urls,
+            lossy_comment,
+            request_id,
         )
     else:
         data = compile_data_existing_group(
-            path, group_id, metadata, track_data, hybrid, spectral_urls, lossy_comment, request_id
+            path,
+            group_id,
+            metadata,
+            track_data,
+            hybrid,
+            spectral_urls,
+            lossy_comment,
+            request_id,
         )
     torrent_path, torrent_file = generate_torrent(gazelle_site, path)
     files = compile_files(path, torrent_file, metadata)
@@ -51,7 +65,10 @@ def prepare_and_upload(
         torrent_id = loop.run_until_complete(gazelle_site.upload(data, files))
         shutil.move(
             torrent_path,
-            os.path.join(config.DOTTORRENTS_DIR, f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent"),
+            os.path.join(
+                config.DOTTORRENTS_DIR,
+                f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
+            ),
         )
         return torrent_id
     except RequestError as e:
@@ -66,7 +83,7 @@ def report_lossy_master(
     track_data,
     source,
     comment,
-    source_url=None
+    source_url=None,
 ):
     """
     Generate the report description and call the function to report the torrent
@@ -78,7 +95,8 @@ def report_lossy_master(
         comment, source_url, spectral_urls, filenames
     )
     loop.run_until_complete(
-        gazelle_site.report_lossy_master(torrent_id, comment, source))
+        gazelle_site.report_lossy_master(torrent_id, comment, source)
+    )
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 
@@ -124,18 +142,25 @@ def concat_track_data(tags, audio_info):
 
 
 def compile_data_new_group(
-    path, metadata, track_data, hybrid, cover_url, spectral_urls, lossy_comment, request_id=None
+    path,
+    metadata,
+    track_data,
+    hybrid,
+    cover_url,
+    spectral_urls,
+    lossy_comment,
+    request_id=None,
 ):
     """
     Compile the data dictionary that needs to be submitted with a brand new
     torrent group upload POST.
     """
-    catno=metadata["catno"]
+    catno = metadata["catno"]
     if config.USE_UPC_AS_CATNO:
         if not metadata["catno"]:
-            catno=metadata["upc"] 
-        else: 
-            catno+=" / "+metadata["upc"] 
+            catno = metadata["upc"]
+        else:
+            catno += " / " + metadata["upc"]
     return {
         "submit": True,
         "type": 0,
@@ -162,19 +187,26 @@ def compile_data_new_group(
         "release_desc": generate_t_description(
             metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment
         ),
-        'requestid':request_id,
+        'requestid': request_id,
     }
 
 
 def compile_data_existing_group(
-    path, group_id, metadata, track_data, hybrid, spectral_urls, lossy_comment,request_id
+    path,
+    group_id,
+    metadata,
+    track_data,
+    hybrid,
+    spectral_urls,
+    lossy_comment,
+    request_id,
 ):
     """Compile the data that needs to be submitted
      with an upload to an existing group."""
-    catno=metadata["catno"]
+    catno = metadata["catno"]
     if config.USE_UPC_AS_CATNO:
         if not metadata["catno"]:
-            catno=metadata["upc"]            
+            catno = metadata["upc"]
     return {
         "submit": True,
         "type": 0,
@@ -192,7 +224,7 @@ def compile_data_existing_group(
         "release_desc": generate_t_description(
             metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment
         ),
-        'requestid':request_id
+        'requestid': request_id,
     }
 
 
@@ -226,11 +258,17 @@ def attach_logfiles(path):
 def generate_torrent(gazelle_site, path):
     """Call the dottorrent function to generate a torrent."""
     click.secho("Generating torrent file...", fg="yellow", nl=False)
-    t = Torrent(path, trackers=[gazelle_site.announce],
-                private=True, source=gazelle_site.site_string)
+    t = Torrent(
+        path,
+        trackers=[gazelle_site.announce],
+        private=True,
+        source=gazelle_site.site_string,
+    )
     t.generate()
-    tpath = os.path.join(tempfile.gettempdir(),
-                         f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent")
+    tpath = os.path.join(
+        tempfile.gettempdir(),
+        f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
+    )
     with open(tpath, "wb") as tf:
         t.save(tf)
     click.secho(" done!", fg="yellow")

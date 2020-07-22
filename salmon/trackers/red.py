@@ -21,7 +21,6 @@ class RedApi(BaseGazelleApi):
             "Connection": "keep-alive",
             "Cache-Control": "max-age=0",
             "User-Agent": config.USER_AGENT,
-
         }
         self.site_code = 'RED'
         self.base_url = 'https://redacted.ch'

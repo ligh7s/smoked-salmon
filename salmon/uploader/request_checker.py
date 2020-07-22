@@ -12,13 +12,15 @@ from salmon.errors import RequestError
 import rich
 
 loop = asyncio.get_event_loop()
+
+
 def check_requests(gazelle_site, searchstrs):
     """
     Search for requests on site and offer a choice to fill one.
     """
     results = get_request_results(gazelle_site, searchstrs)
     print_request_results(gazelle_site, results, " / ".join(searchstrs))
-    #Should add an option to still prompt if there are no results.
+    # Should add an option to still prompt if there are no results.
     if results or config.ALWAYS_ASK_FOR_REQUEST_FILL:
         request_id = _prompt_for_request_id(gazelle_site, results)
         if request_id:
@@ -33,11 +35,12 @@ def get_request_results(gazelle_site, searchstrs):
     results = []
     for searchstr in searchstrs:
         for release in loop.run_until_complete(
-            gazelle_site.request("requests", search=searchstr)#,order='bounty')
+            gazelle_site.request("requests", search=searchstr)  # ,order='bounty')
         )["results"]:
             if release not in results:
                 results.append(release)
     return results
+
 
 def print_request_results(gazelle_site, results, searchstr):
     """Print all the request search results.
@@ -46,14 +49,14 @@ def print_request_results(gazelle_site, results, searchstr):
         click.secho(
             f'\nNo requests were found on {gazelle_site.site_string}',
             fg="green",
-            nl=False
+            nl=False,
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
     else:
         click.secho(
             f'\nRequests were found on {gazelle_site.site_string}: ',
             fg="green",
-            nl=False
+            nl=False,
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for r_index, r in enumerate(results):
@@ -61,7 +64,7 @@ def print_request_results(gazelle_site, results, searchstr):
                 url = gazelle_site.request_url(r["requestId"])
                 # User doesn't get to pick a zero index
                 click.echo(f" {r_index+1:02d} >> {url} | ", nl=False)
-                if len(r['artists'][0])>3:
+                if len(r['artists'][0]) > 3:
                     r['artist'] = "Various Artists"
                 else:
                     r['artist'] = ""
@@ -69,14 +72,16 @@ def print_request_results(gazelle_site, results, searchstr):
                         r['artist'] += a['name'] + " "
                 click.secho(f"{r['artist']}", fg="cyan", nl=False)
                 click.secho(f" - {r['title']} ", fg="cyan", nl=False)
+                click.secho(f"({r['year']}) [{r['releaseType']}] ", fg="yellow")
                 click.secho(
-                    f"({r['year']}) [{r['releaseType']}] ", fg="yellow")
-                click.secho(f"Requirements: {' or '.join(r['bitrateList'])} / ",nl=False)
-                click.secho(f"{' or '.join(r['formatList'])} / ",nl=False)
+                    f"Requirements: {' or '.join(r['bitrateList'])} / ", nl=False
+                )
+                click.secho(f"{' or '.join(r['formatList'])} / ", nl=False)
                 click.secho(f"{' or '.join(r['mediaList'])} / ")
-                
+
             except (KeyError, TypeError) as e:
                 continue
+
 
 def _print_request_details(gazelle_site, req):
     """Print request details."""
@@ -89,28 +94,33 @@ def _print_request_details(gazelle_site, req):
     click.secho(f" - {req['requestorName']} ", fg="cyan", nl=False)
 
     if 'totalBounty' in req.keys():
-        bounty=req['totalBounty']
+        bounty = req['totalBounty']
     elif 'bounty' in req.keys():
-        bounty=req['bounty']
-    bounty = int(bounty)/1048576
+        bounty = req['bounty']
+    bounty = int(bounty) / 1048576
     click.secho(f" - {bounty}MB", fg="cyan")
 
     click.secho(f"Allowed Bitrate: {' | '.join(req['bitrateList'])}")
     click.secho(f"Allowed Formats: {' | '.join(req['formatList'])}")
     if 'CD' in req['mediaList']:
         req['mediaList'].remove('CD')
-        req['mediaList'].append(str('CD '+req['logCue']))
+        req['mediaList'].append(str('CD ' + req['logCue']))
     click.secho(f"Allowed   Media: {' | '.join(req['mediaList'])}")
-    click.secho('Description:',fg="cyan",)
-    description=req['bbDescription'].splitlines(True)
-    
-    #Should probably be refactored out and a setting.
-    line_limit=5
-    num_lines=len(description)
-    if num_lines>line_limit:
-        description="".join(description[:line_limit])+f"...{num_lines-line_limit} more lines..."
+    click.secho(
+        'Description:', fg="cyan",
+    )
+    description = req['bbDescription'].splitlines(True)
+
+    # Should probably be refactored out and a setting.
+    line_limit = 5
+    num_lines = len(description)
+    if num_lines > line_limit:
+        description = (
+            "".join(description[:line_limit])
+            + f"...{num_lines-line_limit} more lines..."
+        )
     else:
-        description="".join(description)
+        description = "".join(description)
     rich.print(description)
 
 
@@ -119,9 +129,8 @@ def _prompt_for_request_id(gazelle_site, results):
     while True:
         request_id = click.prompt(
             click.style(
-                "Fill a request? "
-                "Choose from results, paste a url, or do[n]t."
-                ,fg="magenta",
+                "Fill a request? " "Choose from results, paste a url, or do[n]t.",
+                fg="magenta",
                 bold=True,
             ),
             default="N",
@@ -138,7 +147,11 @@ def _prompt_for_request_id(gazelle_site, results):
                 click.echo(f"Interpreting {request_id} as a request id")
                 return request_id
 
-        elif request_id.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
+        elif (
+            request_id.strip()
+            .lower()
+            .startswith(gazelle_site.base_url + "/requests.php")
+        ):
             request_id = parse.parse_qs(parse.urlparse(request_id).query)['id'][0]
             return request_id
         elif request_id.lower().startswith("n"):
@@ -148,12 +161,13 @@ def _prompt_for_request_id(gazelle_site, results):
             click.echo(f"Not filling a request")
             return None
 
+
 def _confirm_request_id(gazelle_site, request_id):
     """Have the user decide whether or not they want to fill request"""
     try:
-        req=loop.run_until_complete(gazelle_site.request("request", id=request_id))
+        req = loop.run_until_complete(gazelle_site.request("request", id=request_id))
         req['artist'] = ""
-        if len(req['musicInfo']['artists'])>3:
+        if len(req['musicInfo']['artists']) > 3:
             req['artist'] = "Various Artists"
         else:
             for a in req['musicInfo']['artists']:
@@ -165,8 +179,7 @@ def _confirm_request_id(gazelle_site, request_id):
     while True:
         resp = click.prompt(
             click.style(
-                "\nAre you sure you would you like to fill this request [Y]es, "
-                "[n]o",
+                "\nAre you sure you would you like to fill this request [Y]es, " "[n]o",
                 fg="magenta",
                 bold=True,
             ),

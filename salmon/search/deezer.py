@@ -58,14 +58,13 @@ class Searcher(DeezerBase, SearchMixin):
             for rls in resp["data"]
         ]
 
-
-    async def get_label_releases(self, labelstr, maximum=0,year=None):
+    async def get_label_releases(self, labelstr, maximum=0, year=None):
         """Gets all the albums released by a label up to a total number.
         Year filtering doesn't actually work."""
         if year:
-            yearstr="year='"+year+"'"
+            yearstr = "year='" + year + "'"
         else:
-            yearstr=""
+            yearstr = ""
         url_str = f"/search/album&q=label:'{labelstr}' {yearstr}/albums"
         resp = await self.get_json(url_str)
         albums = []
@@ -74,15 +73,17 @@ class Searcher(DeezerBase, SearchMixin):
             i += 25
             for rls in resp["data"]:
                 album = await self.get_json(f"/album/{rls['id']}")
-                albums.append(LabelRlsData(
-                    url=rls['link'],
-                    quality="LOSSLESS",  # Cannot determine.
-                    year=str(self._parse_year(album["release_date"])),
-                    artist=rls['artist']['name'],
-                    album=rls["title"],
-                    type=album['record_type'],
-                    explicit=rls["explicit_lyrics"],
-                ))
+                albums.append(
+                    LabelRlsData(
+                        url=rls['link'],
+                        quality="LOSSLESS",  # Cannot determine.
+                        year=str(self._parse_year(album["release_date"])),
+                        artist=rls['artist']['name'],
+                        album=rls["title"],
+                        type=album['record_type'],
+                        explicit=rls["explicit_lyrics"],
+                    )
+                )
                 if maximum > 0 and len(albums) >= maximum:
                     return "Deezer", albums
             if "next" in resp.keys():

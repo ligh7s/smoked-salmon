@@ -25,7 +25,7 @@ def dupe_check_recent_torrents(gazelle_site, searchstrs):
     seen = []
     for upload in recent_uploads:
         # We don't care about different torrents from the same release.
-        torrent_str = (upload[1] + upload[2])
+        torrent_str = upload[1] + upload[2]
         if torrent_str in seen:
             continue
         seen.append(torrent_str)
@@ -38,7 +38,7 @@ def dupe_check_recent_torrents(gazelle_site, searchstrs):
             new_ratio = SM(None, searchstr, comparison_string).ratio()
             ratio = max(ratio, new_ratio)
         # could be a value in the config.
-        if ratio > .5:
+        if ratio > 0.5:
             hits.append(upload)
     return hits
 
@@ -52,12 +52,14 @@ def print_recent_upload_results(gazelle_site, recent_uploads, searchstr):
         click.secho(
             f'\nFound similar recent uploads in the {gazelle_site.site_string} log: ',
             fg="red",
-            nl=False
+            nl=False,
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for u in recent_uploads[:5]:
             click.secho(
-                f'{u[1]} - {u[2]} | {gazelle_site.base_url}/torrents.php?torrentid={u[0]}', fg="cyan")
+                f'{u[1]} - {u[2]} | {gazelle_site.base_url}/torrents.php?torrentid={u[0]}',
+                fg="cyan",
+            )
 
 
 def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
@@ -70,7 +72,8 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
     if not results and config.CHECK_RECENT_UPLOADS:
         recent_uploads = dupe_check_recent_torrents(gazelle_site, searchstrs)
         print_recent_upload_results(
-            gazelle_site, recent_uploads, " / ".join(searchstrs))
+            gazelle_site, recent_uploads, " / ".join(searchstrs)
+        )
     else:
         print_search_results(gazelle_site, results, " / ".join(searchstrs))
     group_id = _prompt_for_group_id(gazelle_site, results, offer_deletion)
@@ -85,8 +88,7 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
 def get_search_results(gazelle_site, searchstrs):
     results = []
     tasks = [
-        gazelle_site.request("browse", searchstr=searchstr)
-        for searchstr in searchstrs
+        gazelle_site.request("browse", searchstr=searchstr) for searchstr in searchstrs
     ]
     for releases in loop.run_until_complete(asyncio.gather(*tasks)):
         for release in releases['results']:
@@ -149,13 +151,13 @@ def print_search_results(gazelle_site, results, searchstr):
         click.secho(
             f'\nNo groups found on {gazelle_site.site_string} matching this release.',
             fg="green",
-            nl=False
+            nl=False,
         )
     else:
         click.secho(
             f'\nResults matching this release were found on {gazelle_site.site_string}: ',
             fg="red",
-            nl=False
+            nl=False,
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for r_index, r in enumerate(results):
@@ -197,7 +199,9 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
                 click.echo(f"Interpreting {group_id} as a group Id")
                 return group_id
 
-        elif group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php"):
+        elif (
+            group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php")
+        ):
             group_id = parse.parse_qs(parse.urlparse(group_id).query)['id'][0]
             return int(group_id)
         elif group_id.lower().startswith("a"):
@@ -225,9 +229,9 @@ def _print_torrents(gazelle_site, group_id, rset):
             )
         if not t["remastered"]:
             if not group_info:
-                group_info = loop.run_until_complete(gazelle_site.torrentgroup(group_id))[
-                    "group"
-                ]
+                group_info = loop.run_until_complete(
+                    gazelle_site.torrentgroup(group_id)
+                )["group"]
             click.echo(
                 f"> OR / {group_info['recordLabel']} / "
                 f"{group_info['catalogueNumber']} / {t['media']} / "

@@ -11,7 +11,9 @@ from salmon.errors import RequestError
 loop = asyncio.get_event_loop()
 
 
-def print_preassumptions(gazelle_site, path, group_id, source, lossy, spectrals, encoding,spectrals_after):
+def print_preassumptions(
+    gazelle_site, path, group_id, source, lossy, spectrals, encoding, spectrals_after
+):
     """Print what all the passed CLI options will do."""
     click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
     second = []
@@ -36,9 +38,8 @@ def print_preassumptions(gazelle_site, path, group_id, source, lossy, spectrals,
             )
     if spectrals_after:
         click.secho(
-                f'Assessing spectrals after upload.',
-                fg="yellow",
-            )
+            f'Assessing spectrals after upload.', fg="yellow",
+        )
 
     if lossy and not spectrals:
         raise UploadError(

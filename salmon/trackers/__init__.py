@@ -1,5 +1,3 @@
-
-
 import click
 from urllib import parse
 
@@ -7,14 +5,8 @@ from salmon import config
 from salmon.trackers import red, ops
 
 # hard coded as it needs to reflect the imports anyway.
-tracker_classes = {
-    'RED': red.RedApi,
-    'OPS': ops.OpsApi
-}
-tracker_url_code_map = {
-    'redacted.ch': 'RED',
-    'orpheus.network': 'OPS'
-}
+tracker_classes = {'RED': red.RedApi, 'OPS': ops.OpsApi}
+tracker_url_code_map = {'redacted.ch': 'RED', 'orpheus.network': 'OPS'}
 
 # tracker_list is used to offer the user choices. Generated if not specified in the config.
 if hasattr(config, 'TRACKER_LIST'):
@@ -39,10 +31,11 @@ def choose_tracker(choices):
     while True:
         # Loop until we have chosen a tracker or aborted.
         tracker_input = click.prompt(
-            click.style(f'Your choices are {" , ".join(choices)} '
-                        'or [a]bort.',
-                        fg="magenta", bold=True
-                        ),
+            click.style(
+                f'Your choices are {" , ".join(choices)} ' 'or [a]bort.',
+                fg="magenta",
+                bold=True,
+            ),
             default=choices[0],
         )
         tracker_input = tracker_input.strip().upper()
@@ -104,12 +97,14 @@ def validate_request(gazelle_site, request):
             return None
         if request.strip().isdigit():
             pass
-        elif request.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
+        elif (
+            request.strip().lower().startswith(gazelle_site.base_url + "/requests.php")
+        ):
             request = parse.parse_qs(parse.urlparse(request).query)['id'][0]
         click.secho(
-            f"Attempting to fill {gazelle_site.base_url}/requests.php?action=view&id={request}", fg="green")
+            f"Attempting to fill {gazelle_site.base_url}/requests.php?action=view&id={request}",
+            fg="green",
+        )
         return request
     except (KeyError, AttributeError):
-        raise click.BadParameter(
-            "This flag requires a request, either as a url or ID"
-        )
+        raise click.BadParameter("This flag requires a request, either as a url or ID")

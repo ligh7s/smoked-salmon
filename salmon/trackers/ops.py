@@ -12,13 +12,12 @@ class OpsApi(BaseGazelleApi):
             "Connection": "keep-alive",
             "Cache-Control": "max-age=0",
             "User-Agent": config.USER_AGENT,
-
         }
         self.site_code = 'OPS'
         self.base_url = 'https://orpheus.network'
         self.tracker_url = 'https://home.opsfet.ch'
         self.site_string = 'OPS'
-        
+
         self.cookie = config.OPS_SESSION
 
         self.session = requests.Session()

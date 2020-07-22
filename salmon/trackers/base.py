@@ -58,7 +58,6 @@ class BaseGazelleApi:
             "Connection": "keep-alive",
             "Cache-Control": "max-age=0",
             "User-Agent": config.USER_AGENT,
-
         }
         self.site_code = 'RED'
         self.base_url = 'https://redacted.ch'
@@ -239,9 +238,7 @@ class BaseGazelleApi:
         url = f'{self.base_url}/log.php'
         resp = await loop.run_in_executor(
             None,
-            lambda: self.session.get(
-                url, params={'page': page}, headers=self.headers
-            )
+            lambda: self.session.get(url, params={'page': page}, headers=self.headers),
         )
         return resp
 
@@ -249,10 +246,7 @@ class BaseGazelleApi:
         'Crawls some pages of the log and returns uploads'
         url = f'{self.base_url}/log.php'
         recent_uploads = []
-        tasks = [
-            self.fetch_log(i)
-            for i in range(1, max_pages)
-        ]
+        tasks = [self.fetch_log(i) for i in range(1, max_pages)]
         for page in loop.run_until_complete(asyncio.gather(*tasks)):
             recent_uploads += self.parse_uploads_from_log_html(page.text)
         return recent_uploads
@@ -277,9 +271,15 @@ class BaseGazelleApi:
             if resp["status"] != "success":
                 raise RequestError(f"API upload failed: {resp['error']}")
             elif resp["status"] == "success":
-                if 'requestid' in resp['response'].keys() and resp['response']['requestid']:
-                    click.secho("Filled request: "
-                                + self.request_url(resp['response']['requestid']), fg="green")
+                if (
+                    'requestid' in resp['response'].keys()
+                    and resp['response']['requestid']
+                ):
+                    click.secho(
+                        "Filled request: "
+                        + self.request_url(resp['response']['requestid']),
+                        fg="green",
+                    )
                 return resp["response"]["torrentid"]
         except TypeError:
             raise RequestError(f"API upload failed, response text: {resp.text}")
@@ -302,7 +302,8 @@ class BaseGazelleApi:
             )
             if match:
                 raise RequestError(
-                    f"Site upload failed: {match[1]} ({resp.status_code})")
+                    f"Site upload failed: {match[1]} ({resp.status_code})"
+                )
         if 'requests.php' in resp.url:
             try:
                 torrent_id = self.parse_torrent_id_from_filled_request_page(resp.text)
@@ -360,40 +361,38 @@ class BaseGazelleApi:
         """Adds to the start of an individual torrent description
         Currently not supported by the API"""
         current_details = await self.request("torrent", id=torrent_id)
-        new_data = {'action': 'takeedit',
-                    'torrentid': torrent_id,
-                    'type': 1,
-                    "groupremasters": 0,
-                    "remaster_year": current_details['torrent']['remasterYear'],
-                    "remaster_title": current_details['torrent']['remasterTitle'],
-                    "remaster_record_label": current_details['torrent']['remasterRecordLabel'],
-                    "remaster_catalogue_number": current_details['torrent']['remasterCatalogueNumber'],
-                    "format": current_details['torrent']['format'],
-                    "bitrate": current_details['torrent']['encoding'],
-                    "other_bitrate": "",
-                    "media": current_details['torrent']['media'],
-                    "release_desc": description_additon + current_details['torrent']['description']
-                    }
+        new_data = {
+            'action': 'takeedit',
+            'torrentid': torrent_id,
+            'type': 1,
+            "groupremasters": 0,
+            "remaster_year": current_details['torrent']['remasterYear'],
+            "remaster_title": current_details['torrent']['remasterTitle'],
+            "remaster_record_label": current_details['torrent']['remasterRecordLabel'],
+            "remaster_catalogue_number": current_details['torrent'][
+                'remasterCatalogueNumber'
+            ],
+            "format": current_details['torrent']['format'],
+            "bitrate": current_details['torrent']['encoding'],
+            "other_bitrate": "",
+            "media": current_details['torrent']['media'],
+            "release_desc": description_additon
+            + current_details['torrent']['description'],
+        }
 
         url = self.base_url + '/torrents.php'
         new_data["auth"] = self.authkey
         resp = await loop.run_in_executor(
-            None,
-            lambda: self.session.post(
-                url, data=new_data, headers=self.headers
-            ),
+            None, lambda: self.session.post(url, data=new_data, headers=self.headers),
         )
         soup = BeautifulSoup(resp.text, "html.parser")
         edit_error = soup.find('h2', text='Error')
         if edit_error:
             error_message = edit_error.parent.parent.find('p').text
-            raise RequestError(
-                f"Failed to edit torrent: {error_message}"
-            )
+            raise RequestError(f"Failed to edit torrent: {error_message}")
         else:
             click.secho(
-                "Added spectrals to the torrent description.",
-                fg="green",
+                "Added spectrals to the torrent description.", fg="green",
             )
 
     """The following three parsing functions are part of the gazelle class
@@ -410,9 +409,7 @@ class BaseGazelleApi:
         for pl in soup.find_all("a", class_="tooltip"):
             torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
             if torrent_url:
-                torrent_ids.append(
-                    int(torrent_url[1])
-                )
+                torrent_ids.append(int(torrent_url[1]))
         return max(torrent_ids)
 
     def parse_torrent_id_from_filled_request_page(self, text):
@@ -425,9 +422,7 @@ class BaseGazelleApi:
         for pl in soup.find_all("a", string="Yes"):
             torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
             if torrent_url:
-                torrent_ids.append(
-                    int(torrent_url[1])
-                )
+                torrent_ids.append(int(torrent_url[1]))
         return max(torrent_ids)
 
     def parse_uploads_from_log_html(self, text):
@@ -440,7 +435,8 @@ class BaseGazelleApi:
             try:
                 # it having class log_upload is no guarantee that is what it is. Nice one log.
                 torrent_string = re.findall(
-                    "\((.*?)\) \(", entry.find("a").next_sibling)[0].split(" - ")
+                    "\((.*?)\) \(", entry.find("a").next_sibling
+                )[0].split(" - ")
             except:
                 continue
             artist = torrent_string[0]
