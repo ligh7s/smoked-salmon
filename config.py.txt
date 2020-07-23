@@ -1,5 +1,5 @@
 # Read what each of these settings do here:
-# https://gitlab.com/rapidlyblinking/smoked-salmon/wikis/configuration
+# https://github.com/ligh7s/smoked-salmon/wiki/configuration
 # There are many optional settings you can also set.
 
 DOWNLOAD_DIRECTORY = '/path/to/folder/for/the/releases'
