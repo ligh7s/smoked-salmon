@@ -275,11 +275,17 @@ class BaseGazelleApi:
                     'requestid' in resp['response'].keys()
                     and resp['response']['requestid']
                 ):
-                    click.secho(
-                        "Filled request: "
-                        + self.request_url(resp['response']['requestid']),
-                        fg="green",
+                    if resp['response']['requestid']==-1:
+                        click.secho(
+                        "Request fill failed!",
+                        fg="red",
                     )
+                    else:
+                        click.secho(
+                            "Filled request: "
+                            + self.request_url(resp['response']['requestid']),
+                            fg="green",
+                        )
                 return resp["response"]["torrentid"]
         except TypeError:
             raise RequestError(f"API upload failed, response text: {resp.text}")
