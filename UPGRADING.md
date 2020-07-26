@@ -5,6 +5,9 @@ something.
 
 Any config changes must be made or else newer versions will error.
 
+## July 22nd 2020
+
+Lots of changes. Please read CHANGELOG.md
 ## October 5th, 2018
 
 Add option to allow for lossy master/web notes to be put in the torrent description.

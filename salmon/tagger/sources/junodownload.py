@@ -44,7 +44,7 @@ class Scraper(JunodownloadBase, MetadataMixin):
         try:
             date = soup.select('span[itemprop="datePublished"]')[0].string.strip()
             return datetime.strptime(date, "%d %B, %Y").strftime("%Y-%m-%d")
-        except IndexError as e:
+        except (IndexError, AttributeError) as e:
             raise ScrapeError("Could not parse release date.") from e
 
     def parse_release_label(self, soup):
@@ -55,8 +55,12 @@ class Scraper(JunodownloadBase, MetadataMixin):
 
     def parse_release_catno(self, soup):
         try:
-            catblob = soup.find_all('div', attrs = { 'class': 'mb-3' } )[1]
-            return catblob.find('strong', text = 'Cat:').next_sibling.strip().replace(" ", "")
+            catblob = soup.find_all('div', attrs={'class': 'mb-3'})[1]
+            return (
+                catblob.find('strong', text='Cat:')
+                .next_sibling.strip()
+                .replace(" ", "")
+            )
         except IndexError as e:
             raise ScrapeError("Could not parse catalog number.") from e
 
@@ -71,10 +75,15 @@ class Scraper(JunodownloadBase, MetadataMixin):
     def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         cur_disc = 1
-        for track in soup.find_all('div', attrs = { 'class': 'row gutters-sm align-items-center product-tracklist-track'} ):
+        for track in soup.find_all(
+            'div',
+            attrs={
+                'class': 'row gutters-sm align-items-center product-tracklist-track'
+            },
+        ):
             try:
                 num = track.text.strip().split(".", 1)[0]
-                tobj = track.find('div', attrs = { 'class': 'col track-title'})
+                tobj = track.find('div', attrs={'class': 'col track-title'})
                 title = tobj.find('a').text
                 tracks[str(cur_disc)][num] = self.generate_track(
                     trackno=(num),
@@ -101,9 +110,8 @@ def parse_title(title, track):
             "",
             title,
             flags=re.IGNORECASE,
-        )
-        .strip()
-        .rstrip(")")
+        ).strip()
+        # .rstrip(")") Why was this here?
     )
 
 

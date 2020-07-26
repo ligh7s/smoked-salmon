@@ -31,7 +31,7 @@ DEFAULT_VALUES = {
     "IMAGE_UPLOADER": "ptpimg",
     "COVER_UPLOADER": "ptpimg",
     "SPECS_UPLOADER": "mixtape",
-    "ICONS_IN_RED_DESCRIPTIONS": True,
+    "ICONS_IN_DESCRIPTIONS": False,
     "FULLWIDTH_REPLACEMENTS": False,
     "NATIVE_SPECTRALS_VIEWER": False,
     "PROMPT_PUDDLETAG": False,
@@ -41,7 +41,14 @@ DEFAULT_VALUES = {
     "WEB_STATIC_ROOT_URL": "/static",
     "COMPRESS_SPECTRALS": False,
     "LMA_COMMENT_IN_T_DESC": False,
-    "USE_UPC_AS_CATNO":True,
+    "USE_UPC_AS_CATNO": True,
+    "DEFAULT_TRACKER": False,
+    "MULTI_TRACKER_UPLOAD":True,
+    "RED_API_KEY": False,
+    "ALWAYS_ASK_FOR_REQUEST_FILL": False,
+    "CHECK_RECENT_UPLOADS": True,
+    "LOG_DUPE_TOLERANCE":0.5,
+    "CHECK_REQUESTS": True,
 }
 
 
