@@ -7,7 +7,14 @@ Any config changes must be made or else newer versions will error.
 
 ## July 22nd 2020
 
-Lots of changes. Please read CHANGELOG.md
+Lots of changes. Please read CHANGELOG.md  
+You will probably need to run:  
+    pip install -r requirements.txt
+again.
+Also any plugins will probably need updating. 
+
+
+
 ## October 5th, 2018
 
 Add option to allow for lossy master/web notes to be put in the torrent description.

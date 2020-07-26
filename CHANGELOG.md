@@ -6,12 +6,12 @@ Made a new file because there have been a few changes recently.
 
 ## Multi tracker support
 Adds support for OPS to smoked-salmon  
-use --tracker or -t option to specify which tracker to upload to.  
-adds options DEFAULT_TRACKER and TRACKER_LIST (have a gander at config.py.txt example)    
-The script will offer the choice to upload to multiple trackers with one command.
-This can be disabled with MULTI_TRACKER_UPLOAD=False
-So far only RED and OPS are supported but the groundwork is there for other gazelle sites.
-(Setup documentation may need updating)    
+use --tracker or -t option to specify which tracker to upload to.   
+adds options DEFAULT_TRACKER and TRACKER_LIST (have a gander at config.py.txt example)     
+The script will offer the choice to upload to multiple trackers with one command.  
+This can be disabled with MULTI_TRACKER_UPLOAD=False  
+So far only RED and OPS are supported but the groundwork is there for other gazelle sites.  
+(Setup documentation may need updating)      
 
 ## Requests checking
 Added the option to input a request id to be filled as you upload. (-r)   
@@ -31,11 +31,11 @@ This function will also append the UPC to whatever catno is found.
 This can be disabled with USE_UPC_AS_CATNO=False  
 
 ## Spectrals afer upload option. (-a)
-This option will tell the script to only generate spectrals after the upload is complete.   
-It is advised that you only use this if you are in a hurry to get the torrent uploaded.  
-It important that you still always check your spectrals!
-This feature then edits the existing torrent to add the spectrals to the description (and makes a report if asked to).
-It might be advisable good idea to only seed your torrents after you have checked your spectrals.
+This option will tell the script to only generate spectrals after the upload is complete.      
+It is advised that you only use this if you are in a hurry to get the torrent uploaded.    
+It important that you still always check your spectrals!  
+This feature then edits the existing torrent to add the spectrals to the description (and makes a report if asked to).  
+It might be advisable good idea to only seed your torrents after you have checked your spectrals.  
 
 
 ## checkspecs
@@ -44,9 +44,9 @@ This is a standalone command that can check and add spectrals to the description
 (see checkspecs -h for more info)  
 
 # Other Changes
-The script can use an API key for uploading on RED (full support still pending API coverage)  
-Streamlined the way a torrent group id is picked as you upload.
-A library is used for rate limiting (requirements.txt has been updated)
-Added choice to test 24 bit flac for upconverts as you upload.  
+The script can use an API key for uploading on RED (full support still pending API coverage)    
+Streamlined the way a torrent group id is picked as you upload.  
+A library is used for rate limiting (requirements.txt has been updated)  
+Added choice to test 24 bit flac for upconverts as you upload.    
 
 
