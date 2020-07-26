@@ -457,7 +457,7 @@ def make_spectral_bbcode(filenames, spectral_urls):
     bbcode = "[hide=Spectrals]"
     for spec_id, urls in spectral_urls.items():
         filename = re.sub(r"[\[\]]", "_", filenames[spec_id])
-        bbcode += f'[b]{filename} Full[/b][img={urls[0]}]\n[hide=Zoomed][img={urls[1]}][/hide]\n\n'
+        bbcode += f'[b]{filename} Full[/b]\n[img={urls[0]}]\n[hide=Zoomed][img={urls[1]}][/hide]\n\n'
     bbcode += '[/hide]\n'
     return bbcode
 
