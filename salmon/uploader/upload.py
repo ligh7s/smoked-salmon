@@ -14,6 +14,13 @@ from salmon.images import upload_cover
 
 from salmon.errors import RequestError
 
+from salmon.uploader.spectrals import (
+    generate_lossy_approval_comment,
+    report_lossy_master,
+    make_spectral_bbcode,
+
+)
+
 
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.sources import METASOURCES
@@ -75,62 +82,6 @@ def prepare_and_upload(
         click.secho(str(e), fg="red", bold=True)
         exit()
 
-
-def report_lossy_master(
-    gazelle_site,
-    torrent_id,
-    spectral_urls,
-    track_data,
-    source,
-    comment,
-    source_url=None,
-):
-    """
-    Generate the report description and call the function to report the torrent
-    for lossy WEB/master approval.
-    """
-
-    filenames = list(track_data.keys())
-    comment = _add_spectral_links_to_lossy_comment(
-        comment, source_url, spectral_urls, filenames
-    )
-    loop.run_until_complete(
-        gazelle_site.report_lossy_master(torrent_id, comment, source)
-    )
-    click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
-
-
-def generate_lossy_approval_comment(source_url, filenames):
-    comment = click.prompt(
-        click.style(
-            "Do you have a comment for the lossy approval report? It is appropriate to "
-            "make a note about the source here. Source information from go, gos, and the "
-            "queue will be included automatically.",
-            fg="cyan",
-            bold=True,
-        ),
-        default="",
-    )
-    if not (comment or source_url):
-        click.secho(
-            f"This release was not uploaded with go, gos, or the queue, "
-            "so you must add a comment about the source.",
-            fg="red",
-        )
-        return generate_lossy_approval_comment(source_url, filenames)
-    return comment
-
-
-def _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, filenames):
-    if comment:
-        comment += "\n\n"
-    if source_url:
-        comment += f"Sourced from: {source_url}\n\n"
-    comment += "[u]Spectrals:[/u]"
-    for spec_id, urls in spectral_urls.items():
-        filename = re.sub(r"[\[\]]", "_", filenames[spec_id])
-        comment += f'\n[hide={filename}][img={"][img=".join(urls)}][/hide]'
-    return comment
 
 
 def concat_track_data(tags, audio_info):
@@ -315,7 +266,9 @@ def generate_t_description(
     add the specrals URLs if any were specified.
     """
     description = ""
-
+    if spectral_urls:
+        description+=make_spectral_bbcode(list(track_data.keys()),spectral_urls)
+    
     if not hybrid:
         track = next(iter(track_data.values()))
         if track["precision"]:
@@ -350,13 +303,7 @@ def generate_t_description(
     if lossy_comment and config.LMA_COMMENT_IN_T_DESC:
         description += f"[u]Lossy Notes:[/u]\n{lossy_comment}\n\n"
 
-    if spectral_urls:
-        filenames = list(track_data.keys())
-        description += "[u]Spectrals:[/u]"
-        for spec_id, urls in spectral_urls.items():
-            filename = re.sub(r"[\[\]]", "_", filenames[spec_id])
-            description += f'\n[hide={filename}][img={"][img=".join(urls)}][/hide]'
-        description += "\n\n"
+    
 
     if metadata_urls:
         description += "[b]More info:[/b] " + generate_source_links(metadata_urls)

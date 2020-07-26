@@ -22,10 +22,7 @@ from salmon.web import create_app_async, spectrals
 # used by post upload stuff might move.
 import re
 from bs4 import BeautifulSoup
-from salmon.uploader.upload import (
-    generate_lossy_approval_comment,
-    report_lossy_master,
-)
+
 
 loop = asyncio.get_event_loop()
 THREADS = [None] * config.SIMULTANEOUS_SPECTRALS
@@ -401,6 +398,70 @@ def prompt_lossy_master():
             raise AbortAndDeleteFolder
 
 
+
+def report_lossy_master(
+    gazelle_site,
+    torrent_id,
+    spectral_urls,
+    track_data,
+    source,
+    comment,
+    source_url=None,
+):
+    """
+    Generate the report description and call the function to report the torrent
+    for lossy WEB/master approval.
+    """
+
+    filenames = list(track_data.keys())
+    comment = _add_spectral_links_to_lossy_comment(
+        comment, source_url, spectral_urls, filenames
+    )
+    loop.run_until_complete(
+        gazelle_site.report_lossy_master(torrent_id, comment, source)
+    )
+    click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
+
+
+def generate_lossy_approval_comment(source_url, filenames):
+    comment = click.prompt(
+        click.style(
+            "Do you have a comment for the lossy approval report? It is appropriate to "
+            "make a note about the source here. Source information from go, gos, and the "
+            "queue will be included automatically.",
+            fg="cyan",
+            bold=True,
+        ),
+        default="",
+    )
+    if not (comment or source_url):
+        click.secho(
+            f"This release was not uploaded with go, gos, or the queue, "
+            "so you must add a comment about the source.",
+            fg="red",
+        )
+        return generate_lossy_approval_comment(source_url, filenames)
+    return comment
+
+
+def _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, filenames):
+    if comment:
+        comment += "\n\n"
+    if source_url:
+        comment += f"Sourced from: {source_url}\n\n"
+    comment+=make_spectral_bbcode(filenames,spectral_urls)
+    return comment
+
+
+def make_spectral_bbcode(filenames, spectral_urls):
+    bbcode = "[hide=Spectrals]"
+    for spec_id, urls in spectral_urls.items():
+        filename = re.sub(r"[\[\]]", "_", filenames[spec_id])
+        bbcode += f'[b]{filename} Full[/b][img={urls[0]}]\n[hide=Zoomed][img={urls[1]}][/hide]\n\n'
+    bbcode += '[/hide]\n'
+    return bbcode
+
+
 def post_upload_spectral_check(
     gazelle_site, path, torrent_id, spectral_ids, track_data, source, source_url
 ):
@@ -415,15 +476,9 @@ def post_upload_spectral_check(
 
     spectrals_path = os.path.join(path, "Spectrals")
     spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
-
+    # need to refactor bbcode to not be repeated.
     if spectral_urls:
-        spectrals_bbcode = ""
-        filenames = list(track_data.keys())
-        spectrals_bbcode += "[u]Spectrals:[/u]"
-        for spec_id, urls in spectral_urls.items():
-            filename = re.sub(r"[\[\]]", "_", filenames[spec_id])
-            spectrals_bbcode += f'\n[hide={filename}][img={"][img=".join(urls)}][/hide]'
-        spectrals_bbcode += "\n\n"
+        spectrals_bbcode = make_spectral_bbcode(list(track_data.keys()), spectral_urls)
         a = loop.run_until_complete(
             gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode)
         )

@@ -41,12 +41,12 @@ from salmon.uploader.spectrals import (
     check_spectrals,
     handle_spectrals_upload_and_deletion,
     post_upload_spectral_check,
+    report_lossy_master,
 )
 from salmon.uploader.upload import (
     concat_track_data,
     generate_lossy_approval_comment,
     prepare_and_upload,
-    report_lossy_master,
 )
 from salmon.checks.upconverts import upload_upconvert_test
 
