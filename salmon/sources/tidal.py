@@ -61,4 +61,5 @@ def get_tidal_regions_to_fetch():
                 return [k for k, v in ACCOUNTS["Tidal"].items() if v]
         except ImportError:
             pass
-    return []
+    raise ScrapeError(f"No regions defined for Tidal to grab from")
+
