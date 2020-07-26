@@ -303,7 +303,7 @@ def upload(
             pyperclip.copy(url)
         tracker = None
         request_id = None
-        if not remaining_gazelle_sites:
+        if not remaining_gazelle_sites or not config.MULTI_TRACKER_UPLOAD:
             return click.secho(f"\nDone uploading this release.", fg="green")
 
 

@@ -37,8 +37,8 @@ def dupe_check_recent_torrents(gazelle_site, searchstrs):
         for comparison_string in possible_comparisons:
             new_ratio = SM(None, searchstr, comparison_string).ratio()
             ratio = max(ratio, new_ratio)
-        # could be a value in the config.
-        if ratio > 0.5:
+        # Default tolerance is 0.5
+        if ratio > config.LOG_DUPE_TOLERANCE:
             hits.append(upload)
     return hits
 
