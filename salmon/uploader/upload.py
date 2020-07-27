@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import tempfile
+import time
 
 import click
 from dottorrent import Torrent
@@ -232,9 +233,10 @@ def generate_description(track_data, metadata):
     multi_disc = any(
         t["t"].discnumber and int(t["t"].discnumber) > 1 for t in track_data.values()
     )
-
+    total_duration=0
     for track in track_data.values():
         length = "{}:{:02d}".format(track["duration"] // 60, track["duration"] % 60)
+        total_duration+=track["duration"]
         if multi_disc:
             description += (
                 f'[b]{str_to_int_if_int(track["t"].discnumber, zpad=True)}-'
@@ -248,12 +250,15 @@ def generate_description(track_data, metadata):
         description += (
             f'{", ".join(track["t"].artist)} - {track["t"].title} [i]({length})[/i]\n'
         )
+    
+    if len(track_data.values())>1:
+        description+="\n[b]Total length: [/b]{}:{:02d}".format(total_duration  // 60, total_duration % 60)
 
     if metadata["comment"]:
         description += f"\n{metadata['comment']}\n"
 
     if metadata["urls"]:
-        description += "\n[b]More info:[/b] " + generate_source_links(metadata["urls"])
+        description += "\n\n[b]More info:[/b] " + generate_source_links(metadata["urls"])
 
     return description
 
