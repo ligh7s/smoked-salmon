@@ -159,6 +159,7 @@ def compile_data_existing_group(
     if config.USE_UPC_AS_CATNO:
         if not metadata["catno"]:
             catno = metadata["upc"]
+    #print(generate_t_description(metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment))
     return {
         "submit": True,
         "type": 0,
@@ -252,13 +253,13 @@ def generate_description(track_data, metadata):
         )
     
     if len(track_data.values())>1:
-        description+="\n[b]Total length: [/b]{}:{:02d}".format(total_duration  // 60, total_duration % 60)
+        description+="\n[b]Total length: [/b]{}:{:02d}\n".format(total_duration  // 60, total_duration % 60)
 
     if metadata["comment"]:
         description += f"\n{metadata['comment']}\n"
 
     if metadata["urls"]:
-        description += "\n\n[b]More info:[/b] " + generate_source_links(metadata["urls"])
+        description += "\n[b]More info:[/b] " + generate_source_links(metadata["urls"])
 
     return description
 
@@ -288,7 +289,7 @@ def generate_t_description(
     if metadata["date"]:
         description += f'Released on {metadata["date"]}\n'
 
-    if config.INCLUDE_TRACKLIST_IN_T_DESC:
+    if config.INCLUDE_TRACKLIST_IN_T_DESC or hybrid:
         for filename, track in track_data.items():
             description += os.path.splitext(filename)[0]
             description += " [i]({})[/i]".format(

@@ -61,7 +61,7 @@ def _upconvert_check_handler(filepath):
                 f"Wasted bits: {wasted_bits}/{bitdepth}",
                 fg="green",
             )
-    return upconv
+        return upconv
 
 
 def check_upconvert(filepath):
