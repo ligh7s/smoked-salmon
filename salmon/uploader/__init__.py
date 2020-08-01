@@ -34,7 +34,10 @@ from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 from salmon.uploader.dupe_checker import (
     check_existing_group,
     generate_dupe_check_searchstrs,
+    dupe_check_recent_torrents,
+    print_recent_upload_results,
 )
+from salmon.images import upload_cover
 from salmon.uploader.request_checker import check_requests
 from salmon.uploader.preassumptions import print_preassumptions
 from salmon.uploader.spectrals import (
@@ -241,6 +244,13 @@ def upload(
         spectral_urls = handle_spectrals_upload_and_deletion(
             spectrals_path, spectral_ids
         )
+    if config.LAST_MINUTE_DUPE_CHECK:
+        last_min_dupe_check(gazelle_site, searchstrs)
+
+    if not group_id:
+        #This prevents the cover being uploaded more than once for multiple sites.
+        cover_url = upload_cover(path)
+    # Move cover upload here so it only happens once?
 
     # Shallow copy to avoid errors on multiple uploads in one session.
     remaining_gazelle_sites = list(salmon.trackers.tracker_list)
@@ -270,11 +280,13 @@ def upload(
         remaining_gazelle_sites.remove(tracker)
         if not request_id and config.CHECK_REQUESTS:
             request_id = check_requests(gazelle_site, searchstrs)
+
         torrent_id = prepare_and_upload(
             gazelle_site,
             path,
             group_id,
             metadata,
+            cover_url,
             track_data,
             hybrid,
             lossy_master,
@@ -345,6 +357,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress):
 
 
 def recheck_dupe(gazelle_site, searchstrs, metadata):
+    "Rechecks for a dupe if the artist, album or catno have changed."
     new_searchstrs = generate_dupe_check_searchstrs(
         metadata["artists"], metadata["title"], metadata["catno"]
     )
@@ -362,6 +375,26 @@ def recheck_dupe(gazelle_site, searchstrs, metadata):
             nl=False,
         )
         return check_existing_group(gazelle_site, new_searchstrs)
+
+
+def last_min_dupe_check(gazelle_site, searchstrs):
+    "Check for dupes in the log on last time before upload."
+    "Helpful if you are uploading something in race like conditions."
+
+    # Should really avoid asking if already shown the same releases from the log.
+    click.secho(f"Last Minuite Dupe Check on {gazelle_site.site_code}", fg="cyan")
+    recent_uploads = dupe_check_recent_torrents(gazelle_site, searchstrs)
+    if recent_uploads:
+        print_recent_upload_results(
+            gazelle_site, recent_uploads, " / ".join(searchstrs)
+        )
+        if not click.confirm(
+            click.style("\nWould you still like to upload?", fg="red", bold=True,),
+            default=False,
+        ):
+            raise click.Abort
+    else:
+        click.secho(f"Nothing found on {gazelle_site.site_code}", fg="green")
 
 
 def metadata_validator(metadata):

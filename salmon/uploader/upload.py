@@ -34,6 +34,7 @@ def prepare_and_upload(
     path,
     group_id,
     metadata,
+    cover_url,
     track_data,
     hybrid,
     lossy_master,
@@ -43,7 +44,8 @@ def prepare_and_upload(
 ):
     """Wrapper function for all the data compiling and processing."""
     if not group_id:
-        cover_url = upload_cover(path)
+        if not cover_url:
+            cover_url = upload_cover(path)
         data = compile_data_new_group(
             path,
             metadata,
@@ -107,12 +109,11 @@ def compile_data_new_group(
     Compile the data dictionary that needs to be submitted with a brand new
     torrent group upload POST.
     """
-    catno = metadata["catno"]
     if config.USE_UPC_AS_CATNO:
         if not metadata["catno"]:
             catno = metadata["upc"]
         else:
-            catno += " / " + metadata["upc"]
+            catno = metadata["catno"]+" / " + metadata["upc"]
     return {
         "submit": True,
         "type": 0,
@@ -155,10 +156,11 @@ def compile_data_existing_group(
 ):
     """Compile the data that needs to be submitted
      with an upload to an existing group."""
-    catno = metadata["catno"]
     if config.USE_UPC_AS_CATNO:
         if not metadata["catno"]:
             catno = metadata["upc"]
+        else:
+            catno = metadata["catno"]+" / " + metadata["upc"]
     #print(generate_t_description(metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment))
     return {
         "submit": True,
