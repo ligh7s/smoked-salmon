@@ -76,7 +76,7 @@ def prepare_and_upload(
         shutil.move(
             torrent_path,
             os.path.join(
-                config.DOTTORRENTS_DIR,
+                gazelle_site.torrent_directory,
                 f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
             ),
         )

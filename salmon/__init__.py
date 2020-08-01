@@ -50,6 +50,8 @@ DEFAULT_VALUES = {
     "LOG_DUPE_TOLERANCE":0.5,
     "CHECK_REQUESTS": True,
     "LAST_MINUTE_DUPE_CHECK":False,
+    "RED_TORRENTS_DIR":False,
+    "OPS_TORRENTS_DIR":False,
 }
 
 

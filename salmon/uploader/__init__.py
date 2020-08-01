@@ -250,6 +250,8 @@ def upload(
     if not group_id:
         #This prevents the cover being uploaded more than once for multiple sites.
         cover_url = upload_cover(path)
+    else:
+        cover_url=None
     # Move cover upload here so it only happens once?
 
     # Shallow copy to avoid errors on multiple uploads in one session.
@@ -280,6 +282,7 @@ def upload(
         remaining_gazelle_sites.remove(tracker)
         if not request_id and config.CHECK_REQUESTS:
             request_id = check_requests(gazelle_site, searchstrs)
+
 
         torrent_id = prepare_and_upload(
             gazelle_site,
