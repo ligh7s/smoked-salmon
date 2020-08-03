@@ -3,7 +3,6 @@ import os
 import re
 import shutil
 import tempfile
-import time
 
 import click
 from dottorrent import Torrent
@@ -19,7 +18,6 @@ from salmon.uploader.spectrals import (
     generate_lossy_approval_comment,
     report_lossy_master,
     make_spectral_bbcode,
-
 )
 
 
@@ -76,7 +74,7 @@ def prepare_and_upload(
         shutil.move(
             torrent_path,
             os.path.join(
-                gazelle_site.torrent_directory,
+                gazelle_site.dot_torrents_dir,
                 f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
             ),
         )
@@ -84,7 +82,6 @@ def prepare_and_upload(
     except RequestError as e:
         click.secho(str(e), fg="red", bold=True)
         exit()
-
 
 
 def concat_track_data(tags, audio_info):
@@ -113,7 +110,7 @@ def compile_data_new_group(
         if not metadata["catno"]:
             catno = metadata["upc"]
         else:
-            catno = metadata["catno"]+" / " + metadata["upc"]
+            catno = metadata["catno"] + " / " + metadata["upc"]
     return {
         "submit": True,
         "type": 0,
@@ -160,8 +157,8 @@ def compile_data_existing_group(
         if not metadata["catno"]:
             catno = metadata["upc"]
         else:
-            catno = metadata["catno"]+" / " + metadata["upc"]
-    #print(generate_t_description(metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment))
+            catno = metadata["catno"] + " / " + metadata["upc"]
+    # print(generate_t_description(metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment))
     return {
         "submit": True,
         "type": 0,
@@ -236,10 +233,10 @@ def generate_description(track_data, metadata):
     multi_disc = any(
         t["t"].discnumber and int(t["t"].discnumber) > 1 for t in track_data.values()
     )
-    total_duration=0
+    total_duration = 0
     for track in track_data.values():
         length = "{}:{:02d}".format(track["duration"] // 60, track["duration"] % 60)
-        total_duration+=track["duration"]
+        total_duration += track["duration"]
         if multi_disc:
             description += (
                 f'[b]{str_to_int_if_int(track["t"].discnumber, zpad=True)}-'
@@ -253,9 +250,11 @@ def generate_description(track_data, metadata):
         description += (
             f'{", ".join(track["t"].artist)} - {track["t"].title} [i]({length})[/i]\n'
         )
-    
-    if len(track_data.values())>1:
-        description+="\n[b]Total length: [/b]{}:{:02d}\n".format(total_duration  // 60, total_duration % 60)
+
+    if len(track_data.values()) > 1:
+        description += "\n[b]Total length: [/b]{}:{:02d}\n".format(
+            total_duration // 60, total_duration % 60
+        )
 
     if metadata["comment"]:
         description += f"\n{metadata['comment']}\n"
@@ -275,8 +274,8 @@ def generate_t_description(
     """
     description = ""
     if spectral_urls:
-        description+=make_spectral_bbcode(list(track_data.keys()),spectral_urls)
-    
+        description += make_spectral_bbcode(list(track_data.keys()), spectral_urls)
+
     if not hybrid:
         track = next(iter(track_data.values()))
         if track["precision"]:
@@ -310,8 +309,6 @@ def generate_t_description(
 
     if lossy_comment and config.LMA_COMMENT_IN_T_DESC:
         description += f"[u]Lossy Notes:[/u]\n{lossy_comment}\n\n"
-
-    
 
     if metadata_urls:
         description += "[b]More info:[/b] " + generate_source_links(metadata_urls)

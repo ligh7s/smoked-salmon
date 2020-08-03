@@ -30,11 +30,11 @@ class RedApi(BaseGazelleApi):
         if config.RED_API_KEY:
             self.api_key = config.RED_API_KEY
 
-        if config.RED_TORRENTS_DIR:
-            self.torrent_directory=config.RED_TORRENTS_DIR
+        if config.RED_DOTTORRENTS_DIR:
+            self.dot_torrents_dir = config.RED_DOTTORRENTS_DIR
         else:
-            self.torrent_directory=config.DOTTORRENTS_DIR
-        
+            self.dot_torrents_dir = config.DOTTORRENTS_DIR
+
         self.session = requests.Session()
         self.session.headers.update(self.headers)
 
