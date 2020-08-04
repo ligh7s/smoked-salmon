@@ -8,8 +8,9 @@ import mutagen
 
 from salmon.errors import NotAValidInputFile
 
+
 def upload_upconvert_test(path):
-    any_upconverts=test_upconverted(path)
+    any_upconverts = test_upconverted(path)
     if any_upconverts:
         if click.confirm(
             click.style(
@@ -26,6 +27,7 @@ def upload_upconvert_test(path):
                 fg="green",
             ),
         )
+
 
 def test_upconverted(path):
     if os.path.isfile(path):
@@ -61,7 +63,7 @@ def _upconvert_check_handler(filepath):
                 f"Wasted bits: {wasted_bits}/{bitdepth}",
                 fg="green",
             )
-    return upconv
+        return upconv
 
 
 def check_upconvert(filepath):

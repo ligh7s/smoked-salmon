@@ -63,6 +63,7 @@ class BaseGazelleApi:
         self.base_url = 'https://redacted.ch'
         self.tracker_url = 'https://flacsfor.me'
         self.site_string = 'RED'
+        self.dot_torrents_dir = config.DOTTORRENTS_DIR
         self.cookie = config.RED_SESSION
         if 'SITE_API_KEY' in tracker_details.keys():
             self.api_key = config.RED_API_KEY
@@ -275,11 +276,10 @@ class BaseGazelleApi:
                     'requestid' in resp['response'].keys()
                     and resp['response']['requestid']
                 ):
-                    if resp['response']['requestid']==-1:
+                    if resp['response']['requestid'] == -1:
                         click.secho(
-                        "Request fill failed!",
-                        fg="red",
-                    )
+                            "Request fill failed!", fg="red",
+                        )
                     else:
                         click.secho(
                             "Filled request: "

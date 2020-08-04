@@ -34,11 +34,11 @@ def get_request_results(gazelle_site, searchstrs):
     "Get the request results from gazelle site"
     results = []
     for searchstr in searchstrs:
-        for release in loop.run_until_complete(
+        for req in loop.run_until_complete(
             gazelle_site.request("requests", search=searchstr)  # ,order='bounty')
         )["results"]:
-            if release not in results:
-                results.append(release)
+            if req not in results:
+                results.append(req)
     return results
 
 

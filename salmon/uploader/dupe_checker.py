@@ -217,8 +217,7 @@ def _print_torrents(gazelle_site, group_id, rset):
     """Print the torrents that are a part of the torrent group."""
     group_info = {}
     click.secho(f"\nSelected ID: {rset['groupId']} ", nl=False)
-    click.secho(f" - {rset['groupName']} ", fg="cyan", nl=False)
-    click.secho(f" - {rset['artist']} ", fg="cyan", nl=False)
+    click.secho(f"| {rset['artist']} - {rset['groupName']} ", fg="cyan", nl=False)
     click.secho(f"({rset['groupYear']})", fg="yellow")
     click.secho("Torrents in this group:", fg="yellow", bold=True)
     for t in rset["torrents"]:
