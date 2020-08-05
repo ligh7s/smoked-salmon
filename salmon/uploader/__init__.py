@@ -199,10 +199,6 @@ def upload(
         fg="green",
         bold=True,
     )
-    if config.DOWNLOAD_DIRECTORY:
-        dest = config.DOWNLOAD_DIRECTORY
-        shutil.move(path, dest)
-        return click.secho(f"\nMoved folder to download directory", fg="yellow")
 
     if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
         pyperclip.copy(url)
