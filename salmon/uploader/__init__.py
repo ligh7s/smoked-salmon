@@ -199,8 +199,6 @@ def upload(
         fg="green",
         bold=True,
     )
-    
-    
     if config.DOWNLOAD_DIRECTORY:
         dest = config.DOWNLOAD_DIRECTORY
         shutil.move(path, dest)
