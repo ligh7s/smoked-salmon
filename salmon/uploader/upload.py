@@ -106,11 +106,6 @@ def compile_data_new_group(
     Compile the data dictionary that needs to be submitted with a brand new
     torrent group upload POST.
     """
-    if config.USE_UPC_AS_CATNO:
-        if not metadata["catno"]:
-            catno = metadata["upc"]
-        else:
-            catno = metadata["catno"] + " / " + metadata["upc"]
     return {
         "submit": True,
         "type": 0,
@@ -119,13 +114,13 @@ def compile_data_new_group(
         "importance[]": [ARTIST_IMPORTANCES[a[1]] for a in metadata["artists"]],
         "year": metadata["group_year"],
         "record_label": metadata["label"],
-        "catalogue_number": catno,
+        "catalogue_number": generate_catno(metadata),
         "releasetype": RELEASE_TYPES[metadata["rls_type"]],
         "remaster": True,
         "remaster_year": metadata["year"],
         "remaster_title": metadata["edition_title"],
         "remaster_record_label": metadata["label"],
-        "remaster_catalogue_number": catno,
+        "remaster_catalogue_number": generate_catno(metadata),
         "format": metadata["format"],
         "bitrate": metadata["encoding"],
         "other_bitrate": None,
@@ -153,11 +148,6 @@ def compile_data_existing_group(
 ):
     """Compile the data that needs to be submitted
      with an upload to an existing group."""
-    if config.USE_UPC_AS_CATNO:
-        if not metadata["catno"]:
-            catno = metadata["upc"]
-        else:
-            catno = metadata["catno"] + " / " + metadata["upc"]
     # print(generate_t_description(metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment))
     return {
         "submit": True,
@@ -167,7 +157,7 @@ def compile_data_existing_group(
         "remaster_year": metadata["year"],
         "remaster_title": metadata["edition_title"],
         "remaster_record_label": metadata["label"],
-        "remaster_catalogue_number": catno,
+        "remaster_catalogue_number": generate_catno(metadata),
         "format": metadata["format"],
         "bitrate": metadata["encoding"],
         "other_bitrate": None,
@@ -206,7 +196,12 @@ def attach_logfiles(path):
                 )
     return [("logfiles[]", lf) for lf in logfiles]
 
-
+def generate_catno(metadata):
+    if config.USE_UPC_AS_CATNO:
+        return ' / '.join(x for x in [metadata["catno"], metadata["upc"]] if x)
+    else:
+        return metadata["catno"]
+            
 def generate_torrent(gazelle_site, path):
     """Call the dottorrent function to generate a torrent."""
     click.secho("Generating torrent file...", fg="yellow", nl=False)
