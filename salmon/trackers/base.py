@@ -257,8 +257,7 @@ class BaseGazelleApi:
         using the API"""
         url = self.base_url + "/ajax.php?action=upload"
         data["auth"] = self.authkey
-        '''Shallow copy.
-        We don't want the future requests to send the api key.'''
+        # Shallow copy. We don't want the future requests to send the api key.
         api_key_headers = {**self.headers, "Authorization": self.api_key}
         resp = await loop.run_in_executor(
             None,

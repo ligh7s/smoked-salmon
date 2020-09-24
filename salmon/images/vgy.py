@@ -1,3 +1,5 @@
+#Not currently supported as it requires logging in.
+
 import asyncio
 import contextlib
 import mimetypes

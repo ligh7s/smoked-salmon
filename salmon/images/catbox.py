@@ -4,23 +4,35 @@ from salmon import config
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
 
+from random import choice
 
-#mimetypes.init()
-HEADERS = {"referer": "https://ptpimg.me/index.php", "User-Agent": config.USER_AGENT}
+from bs4 import BeautifulSoup
+from salmon.constants import UAGENTS
+
+
+HEADERS = {
+    "User-Agent": choice(UAGENTS),
+    "referrer": "https://catbox.moe/",
+}
+
 
 class ImageUploader(BaseImageUploader):
     def _perform(self, file_, ext):
-        data = {"api_key": config.PTPIMG_KEY}
-        url = "https://ptpimg.me/upload.php"
-        files = {"file-upload[0]": file_}
+        data = {
+            "reqtype": "fileupload",
+            'userhash': '',
+        }
+        url = "https://catbox.moe/user/api.php"
+        files = {"fileToUpload": file_}
         resp = requests.post(url, headers=HEADERS, data=data, files=files)
         if resp.status_code == requests.codes.ok:
             try:
-                r = resp.json()[0]
-                return f"https://ptpimg.me/{r['code']}.{r['ext']}", None
+                return resp.text, None
             except ValueError as e:
                 raise ImageUploadFailed(
                     f"Failed decoding body:\n{e}\n{resp.content}"
                 ) from e
         else:
-            raise ImageUploadFailed(f"Failed. Status {resp.status_code}:\n{resp.content}")
+            raise ImageUploadFailed(
+                f"Failed. Status {resp.status_code}:\n{resp.content}"
+            )

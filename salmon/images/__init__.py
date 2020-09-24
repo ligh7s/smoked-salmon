@@ -10,15 +10,15 @@ from salmon import config
 from salmon.common import AliasedCommands, commandgroup
 from salmon.database import DB_PATH
 from salmon.errors import ImageUploadFailed
-from salmon.images import imgur, mixtape, ptpimg, vgy
+from salmon.images import imgur, ptpimg, emp, catbox
 
 loop = asyncio.get_event_loop()
 
 HOSTS = {
     "ptpimg": ptpimg,
-    "mixtape": mixtape,
-    "vgy.me": vgy,
     "imgur": imgur,
+    "emp": emp,
+    "catbox": catbox,
 }
 
 
@@ -54,9 +54,10 @@ def up(filepaths, image_host):
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         urls = []
+        upload_function = image_host.ImageUploader().upload_file
         try:
             tasks = [
-                loop.run_in_executor(None, lambda f=f: image_host.upload_file(f))
+                loop.run_in_executor(None, lambda f=f: upload_function(f))
                 for f in filepaths
             ]
             for url, deletion_url in loop.run_until_complete(asyncio.gather(*tasks)):
@@ -96,6 +97,7 @@ def ls(limit, offset):
             (limit, offset),
         )
         for row in cursor.fetchall():
+            click.secho("")
             click.secho(f"{row['id']:04d}. ", fg="yellow", nl=False)
             click.secho(f"{row['time']} ", fg="green", nl=False)
             click.secho(f"{row['url']} ", fg="cyan", nl=False)
@@ -124,7 +126,9 @@ def upload_cover(path):
                     url = loop.run_until_complete(
                         loop.run_in_executor(
                             None,
-                            lambda: HOSTS[config.COVER_UPLOADER].upload_file(fpath)[0],
+                            lambda: HOSTS[config.COVER_UPLOADER]
+                            .ImageUploader()
+                            .upload_file(fpath)[0],
                         )
                     )
                 except (ImageUploadFailed, ValueError) as error:
@@ -148,9 +152,10 @@ def upload_spectrals(spectrals, uploader=HOSTS[config.SPECS_UPLOADER], successfu
     response = {}
     successful = successful or set()
     one_failed = False
+    upload_function = uploader.ImageUploader().upload_file
     for specs_block in chunker(spectrals):
         tasks = [
-            _spectrals_handler(sid, filename, sp, uploader)
+            _spectrals_handler(sid, filename, sp, upload_function)
             for sid, filename, sp in specs_block
             if sid not in successful
         ]
@@ -190,7 +195,7 @@ async def _spectrals_handler(spec_id, filename, spectral_paths, uploader):
     try:
         click.secho(f"Uploading spectrals for {filename}...", fg="yellow")
         tasks = [
-            loop.run_in_executor(None, lambda f=f: uploader.upload_file(f)[0])
+            loop.run_in_executor(None, lambda f=f: uploader(f)[0])
             for f in spectral_paths
         ]
         return spec_id, await asyncio.gather(*tasks)
