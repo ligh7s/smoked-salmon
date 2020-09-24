@@ -19,16 +19,19 @@ HEADERS = {
     "Accept": "application/json",
     "Linx-Expiry": "0",
 }
+AUTH_TOKEN = None
 cookies = {"AGREE_CONSENT": "1", "PHPSESSID": "45onca6s8hi8oi07ljqla31gfu"}
 
 
 class ImageUploader(BaseImageUploader):
     def __init__(self):
-        "When class is first used we need to fetch an authtoken"
-        resp = requests.get('https://jerking.empornium.ph', cookies=cookies)
-        soup = BeautifulSoup(resp.text, "html.parser")
-        self.auth_token = soup.find(attrs={"name": "auth_token"})['value']
-        print(self.auth_token)
+        "When class is first used we need to fetch an authtoken."
+        global AUTH_TOKEN
+        if not AUTH_TOKEN:
+            resp = requests.get('https://jerking.empornium.ph', cookies=cookies)
+            soup = BeautifulSoup(resp.text, "html.parser")
+            AUTH_TOKEN = soup.find(attrs={"name": "auth_token"})['value']
+        self.auth_token = AUTH_TOKEN
         if not self.auth_token:
             raise ImageUploadFailed
 
