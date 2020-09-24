@@ -196,12 +196,14 @@ def attach_logfiles(path):
                 )
     return [("logfiles[]", lf) for lf in logfiles]
 
+
 def generate_catno(metadata):
     if config.USE_UPC_AS_CATNO:
         return ' / '.join(x for x in [metadata["catno"], metadata["upc"]] if x)
     else:
         return metadata["catno"]
-            
+
+
 def generate_torrent(gazelle_site, path):
     """Call the dottorrent function to generate a torrent."""
     click.secho("Generating torrent file...", fg="yellow", nl=False)
