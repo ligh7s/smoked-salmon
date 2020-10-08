@@ -30,7 +30,7 @@ DEFAULT_VALUES = {
     "STRIP_USELESS_VERSIONS": True,
     "IMAGE_UPLOADER": "ptpimg",
     "COVER_UPLOADER": "ptpimg",
-    "SPECS_UPLOADER": "mixtape",
+    "SPECS_UPLOADER": "emp",
     "ICONS_IN_DESCRIPTIONS": False,
     "FULLWIDTH_REPLACEMENTS": False,
     "NATIVE_SPECTRALS_VIEWER": False,
