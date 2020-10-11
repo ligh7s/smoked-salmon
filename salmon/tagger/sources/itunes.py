@@ -13,6 +13,7 @@ ALIAS_GENRE = {
     "Hip-Hop/Rap": {"Hip Hop", "Rap"},
     "R&B/Soul": {"Rhythm & Blues", "Soul"},
     "Music": {},
+    #Aliasing Music to an empty set because we don't want a genre 'music'
 }
 
 
