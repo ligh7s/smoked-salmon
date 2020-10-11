@@ -5,7 +5,7 @@ from urllib import parse
 import click
 
 from salmon import config
-from salmon.common import RE_FEAT, make_searchstrs, sizeof_fmt
+from salmon.common import RE_FEAT, make_searchstrs, format_size
 from salmon.errors import AbortAndDeleteFolder
 
 from salmon.errors import RequestError
@@ -98,7 +98,7 @@ def _print_request_details(gazelle_site, req):
     elif 'bounty' in req.keys():
         bounty = req['bounty']
 
-    bounty = sizeof_fmt(bounty)
+    bounty = format_size(bounty)
     click.secho(bounty, fg="cyan")
 
     click.secho(f"Allowed Bitrate: {' | '.join(req['bitrateList'])}")

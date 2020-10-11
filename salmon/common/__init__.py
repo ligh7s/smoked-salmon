@@ -24,7 +24,7 @@ from salmon.common.strings import (  # noqa: F401
     normalize_accents,
     strip_template_keys,
     truncate,
-    sizeof_fmt,
+    format_size,
 )
 from salmon.errors import ScrapeError
 
