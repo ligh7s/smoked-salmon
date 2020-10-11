@@ -155,7 +155,7 @@ def parse_artists_track(track):
     """Parse the artists listed per-track, below the track title."""
     track_block = track.select(".by-line.typography-caption")
     if len(track_block) == 1:
-        biline = track_block[0].text.strip().replace("\n",", ")
+        biline = track_block[0].text.strip().replace("\n", ", ")
         if biline[0:3] == "By ":
             return _parse_artists_commas(biline[2:])
         else:
@@ -179,7 +179,6 @@ def _parse_artists_commas(artiststr):
     artists = []
     res = re.match(r"([^,]+)((?:, [^,&]+)+) & (.+)$", artiststr)
     if res:
-        print(res)
         artists = [res[1].strip()] + [r.strip() for r in res[2].split(",") if r.strip()]
         for a in artists:
             if a not in artists:
