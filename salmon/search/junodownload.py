@@ -31,8 +31,22 @@ class Searcher(JunodownloadBase, SearchMixin):
                 title = su_title.string
 
                 right_blob = meta.find('div', attrs={'class': 'text-sm mb-3 mb-lg-4'})
+
+                right_blob_elements_count = len(
+                    right_blob.get_text(separator="|").strip().split("|")
+                )
+                if right_blob_elements_count != 3:
+                    # skip item missing one or more of: catno, date or genre
+                    continue
+
                 date = right_blob.find('br').next_sibling.strip()
-                year = 2000 + int(date[-2:])
+                year = int(date[-2:])
+
+                if 40 <= year <= 99:
+                    year = 1900 + year
+                else:
+                    year = 2000 + year
+
                 catno = right_blob.find('br').previous_sibling.strip().replace(' ', '')
 
                 ar_blob = meta.find('div', attrs={'class': 'col juno-artist'})

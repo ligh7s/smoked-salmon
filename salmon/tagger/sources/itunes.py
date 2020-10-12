@@ -2,6 +2,8 @@ import re
 from collections import defaultdict
 from datetime import datetime
 
+import json
+
 from salmon.common import RE_FEAT, parse_copyright
 from salmon.errors import ScrapeError
 from salmon.sources import iTunesBase
@@ -10,37 +12,37 @@ from salmon.tagger.sources.base import MetadataMixin
 ALIAS_GENRE = {
     "Hip-Hop/Rap": {"Hip Hop", "Rap"},
     "R&B/Soul": {"Rhythm & Blues", "Soul"},
+    "Music": {},
+    #Aliasing Music to an empty set because we don't want a genre 'music'
 }
 
 
 class Scraper(iTunesBase, MetadataMixin):
     def parse_release_title(self, soup):
         try:
-            title = soup.select(".product-header__title")[0].string
+            title = soup.select(".product-name")[0].text.strip()
             return RE_FEAT.sub("", title)
         except (TypeError, IndexError) as e:
             raise ScrapeError("Failed to parse scraped title.") from e
 
     def parse_cover_url(self, soup):
         try:
-            art = soup.select(
-                "picture.product-artwork.product-artwork--captioned"
-                ".we-artwork--fullwidth.we-artwork.ember-view source"
-            )[0]["srcset"]
-            return re.search(r",(https://[^,]+\.jpg) 2x", art)[1]
+            # Just choosing the last artwork url here.
+            art = (
+                soup.select(".product-lockup__artwork-for-product")[0]
+                .img['srcset']
+                .split(",")
+            )
+            return art[-1].split()[0]
         except (TypeError, IndexError) as e:
             raise ScrapeError("Could not parse cover URL.") from e
 
     def parse_genres(self, soup):
         try:
-            genre = soup.select(
-                ".product-header__list .inline-list "
-                "li.inline-list__item.inline-list__item--bulleted a"
-            )[0].string
-            try:
-                return ALIAS_GENRE[genre]
-            except KeyError:
-                return {genre.strip()}
+            info = json.loads(soup.find(attrs={"name": "schema:music-album"}).text)
+            genres = {g for gs in info['genre'] for g in ALIAS_GENRE.get(gs, [gs])}
+            # either replace with alias (which can be more than one tag) or return untouched.
+            return genres
         except (TypeError, IndexError) as e:
             raise ScrapeError("Could not parse genres.") from e
 
@@ -51,34 +53,19 @@ class Scraper(iTunesBase, MetadataMixin):
             raise ScrapeError("Could not parse release year.") from e
 
     def parse_release_date(self, soup):
-        for selector in [
-            ".inline-list__item.inline-list__item--preorder-media",
-            ".product-header__list__item.product-header__list__item--preorder-media",
-            ".product-hero__tracks .link-list__item__date",
-        ]:
-            try:
-                date_string = soup.select(selector)[0].string
-                try:
-                    date = re.search(r"([A-Z][a-z]+ \d{1,2}, \d{4})", date_string)[1]
-                except TypeError:
-                    date = date_string
-                for f in ["%b %d, %Y", "%d %b %Y", "%d de %b de %Y"]:
-                    try:
-                        return datetime.strptime(date, f).strftime("%Y-%m-%d")
-                    except ValueError:
-                        pass
-            except (TypeError, IndexError):
-                pass
-        # raise ScrapeError('Could not parse release date.')
-        # Apparently iTunes is returning releases without the date now.
-        return None
+        # This can't be enough. Can it?
+        try:
+            date_string = soup.find(attrs={"property": "music:release_date"})[
+                'content'
+            ].split("T")[0]
+            return date_string
+        except:
+            return None
 
     def parse_release_label(self, soup):
         try:
             return parse_copyright(
-                soup.select(".product-hero__tracks .link-list__item--copyright")[
-                    0
-                ].string
+                soup.select(".song-copyright")[0].string.lower().title()
             )
         except IndexError as e:
             raise ScrapeError("Could not parse record label.") from e
@@ -92,30 +79,25 @@ class Scraper(iTunesBase, MetadataMixin):
             return None
 
     def parse_tracks(self, soup):
+
         tracks = defaultdict(dict)
         cur_disc = 1
-        for track in soup.select(".product-hero__tracks tr.table__row"):
-            try:
-                if track.select(".icon-musicvideo"):
-                    continue
 
+        for track in soup.select(".web-preview"):
+            try:
                 try:
-                    num = track.select(".table__row__track span.table__row__number")[
-                        0
-                    ].string.strip()
+                    num = (
+                        track.select(".song-index")[0]
+                        .select(".column-data")[0]
+                        .string.strip()
+                    )
                 except IndexError:
                     continue
-
-                raw_title = track.select(
-                    ".table__row__name .table__row__titles .table__row__headline"
-                )[0].text.strip()
+                raw_title = track.select(".song-name")[0].text.strip()
                 title = RE_FEAT.sub("", raw_title)
-                explicit = bool(
-                    track.select(".table__row__name .table__row__titles .icon-explicit")
-                )
-
-                # iTunes silently increments disc.
-                if int(num) == 1 and int(num) in tracks[str(cur_disc)]:
+                explicit = bool(track.select(".badge.explicit.default"))
+                # Itunes silently increments disc number.
+                if int(num) == 1 and num in tracks[str(cur_disc)]:
                     cur_disc += 1
 
                 tracks[str(cur_disc)][num] = self.generate_track(
@@ -128,6 +110,7 @@ class Scraper(iTunesBase, MetadataMixin):
             except (ValueError, IndexError) as e:
                 raise e
                 raise ScrapeError("Could not parse tracks.") from e
+
         return dict(tracks)
 
 
@@ -148,34 +131,36 @@ def parse_artists_header(soup):
     """Parse the artists listed in the header as artists of the release."""
     artists = []
     try:
-        header_scr = soup.select(".product-header .product-header__identity a")[
-            0
-        ].string
+        release_artists = soup.select(".product-creator")[0].a.string.strip()
     except (TypeError, IndexError):
         return artists
 
-    if re.match(r"[^,]+, [^&]+ (& [^&]+)+", header_scr):
-        first_artist, rest = header_scr.split(",", 1)
+    if re.match(r"[^,]+, [^&]+ (& [^&]+)+", release_artists):
+        first_artist, rest = release_artists.split(",", 1)
         artists.append(first_artist)
         for a in rest.split("&"):
             a = a.strip()
             if a not in artists:
                 artists.append(a)
-    elif "&" in header_scr:
-        for a in header_scr.split("&"):
+    elif "&" in release_artists:
+        for a in release_artists.split("&"):
             a = a.strip()
             if a not in artists:
                 artists.append(a)
     else:
-        artists.append(header_scr.strip())
+        artists.append(release_artists.strip())
     return artists
 
 
 def parse_artists_track(track):
     """Parse the artists listed per-track, below the track title."""
-    track_block = track.select(".table__row__name .table__row__titles > div")
-    if len(track_block) == 2:
-        return _parse_artists_commas(track_block[1].text)
+    track_block = track.select(".by-line.typography-caption")
+    if len(track_block) == 1:
+        biline = track_block[0].text.strip().replace("\n", ", ")
+        if biline[0:3] == "By ":
+            return _parse_artists_commas(biline[2:])
+        else:
+            return _parse_artists_commas(biline)
     return []
 
 
