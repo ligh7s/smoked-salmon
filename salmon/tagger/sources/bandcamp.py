@@ -51,7 +51,9 @@ class Scraper(BandcampBase, MetadataMixin):
 
     def parse_release_label(self, soup):
         try:
-            artist = soup.select('#name-section span[itemprop="byArtist"] a')[0].string
+            namesection = soup.select('#name-section')
+            for div in namesection:
+                artist = div.find("span").text.strip()
             label = soup.select("#band-name-location .title")[0].string
             if artist != label:
                 return label
@@ -60,18 +62,17 @@ class Scraper(BandcampBase, MetadataMixin):
 
     def parse_tracks(self, soup):
         tracks = defaultdict(dict)
-        artist = soup.select('#name-section span[itemprop="byArtist"] a')[0].string
+        namesection = soup.select('#name-section')
+        for div in namesection:
+            artist = div.find("span").text.strip()
+        various = artist
         tracklist_scrape = soup.select("#track_table tr.track_row_view")
-        various = all(
-            " - " in t.select('.title-col span[itemprop="name"]')[0].string
-            for t in tracklist_scrape
-        )
         for track in tracklist_scrape:
             try:
                 num = track.select(".track-number-col .track_number")[0].text.rstrip(
                     "."
                 )
-                title = track.select('.title-col span[itemprop="name"]')[0].string
+                title = track.select('.title-col span[class="track-title"]')[0].string
                 tracks["1"][num] = self.generate_track(
                     trackno=int(num),
                     discno=1,
