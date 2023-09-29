@@ -44,7 +44,7 @@ class TidalBase(BaseScraper):
                 data["tracklist"] = tracklist["items"]
                 return data
             except json.decoder.JSONDecodeError as e:
-                raise ScrapeError(f"Tidal page did not return valid JSON.") from e
+                raise ScrapeError("Tidal page did not return valid JSON.") from e
             except (KeyError, ScrapeError):
                 pass
         raise ScrapeError(f"Failed to grab metadata for {url}.")
@@ -61,5 +61,4 @@ def get_tidal_regions_to_fetch():
                 return [k for k, v in ACCOUNTS["Tidal"].items() if v]
         except ImportError:
             pass
-    raise ScrapeError(f"No regions defined for Tidal to grab from")
-
+    raise ScrapeError("No regions defined for Tidal to grab from")

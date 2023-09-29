@@ -91,7 +91,7 @@ def _transcode_files(old_path, new_path, bitrate):
                     raise click.Abort
                 try:
                     thread.kill()
-                except:  # noqa: E701
+                except:  # noqa: E722
                     pass
 
             if not thread or thread.poll() is not None:

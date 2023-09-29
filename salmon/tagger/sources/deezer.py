@@ -23,7 +23,7 @@ class Scraper(DeezerBase, MetadataMixin):
     def parse_release_year(self, soup):
         try:
             return int(re.search(r"(\d{4})", soup["release_date"])[1])
-        except TypeError as e:
+        except TypeError:
             return None
             # raise ScrapeError('Could not parse release year.') from e
 

@@ -114,7 +114,7 @@ class DeezerBase(BaseScraper):
             data["cover_xl"] = self.get_cover(internal_data)
             return data
         except json.decoder.JSONDecodeError as e:
-            raise ScrapeError(f"Deezer page did not return valid JSON.") from e
+            raise ScrapeError("Deezer page did not return valid JSON.") from e
         except (KeyError, ScrapeError) as e:
             raise ScrapeError(f"Failed to grab metadata for {url}.") from e
 

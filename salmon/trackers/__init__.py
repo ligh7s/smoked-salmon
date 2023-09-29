@@ -1,7 +1,7 @@
 import click
 from urllib import parse
 
-from salmon import config
+from salmon import ConfigError, config
 from salmon.trackers import red, ops
 
 # hard coded as it needs to reflect the imports anyway.
@@ -18,7 +18,7 @@ else:
     if hasattr(config, 'OPS_SESSION'):
         tracker_list.append('OPS')
     if len(tracker_list) == 0:
-        raise ConfigError(f"You need a tracker session cookie in your config!")
+        raise ConfigError("You need a tracker session cookie in your config!")
 
 
 def get_class(site_code):
@@ -49,7 +49,7 @@ def choose_tracker(choices):
                     click.secho(f"Using tracker: {choice}", fg="green")
                     return choice
         elif tracker_input.lower().startswith("a"):
-            click.secho(f"\nDone with this release.", fg="green")
+            click.secho("\nDone with this release.", fg="green")
             raise click.Abort
 
 

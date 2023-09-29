@@ -70,4 +70,3 @@ class ImageUploader(BaseImageUploader):
             raise ImageUploadFailed(
                 f"Failed. Status {resp.status_code}:\n{resp.content}"
             )
-

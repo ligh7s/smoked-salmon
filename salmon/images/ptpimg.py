@@ -5,8 +5,8 @@ from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
 
 
-#mimetypes.init()
 HEADERS = {"referer": "https://ptpimg.me/index.php", "User-Agent": config.USER_AGENT}
+
 
 class ImageUploader(BaseImageUploader):
     def _perform(self, file_, ext):

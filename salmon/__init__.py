@@ -12,7 +12,7 @@ DEFAULT_VALUES = {
     "SEARCH_EXCLUDED_LABELS": {"edm comps"},
     "BLACKLISTED_GENRES": {"Soundtrack", "Asian Music"},
     "FLAC_COMPRESSION_LEVEL": 8,
-    "TIDAL_TOKEN": "hZ9wuySZCmpLLiui",
+    "TIDAL_TOKEN": "CzET4vdadNUFQ5JU",
     "TIDAL_SEARCH_REGIONS": ["DE", "NZ", "US", "GB"],
     "TIDAL_FETCH_REGIONS": ["DE", "NZ", "US", "GB"],
     "LOWERCASE_COVER": False,

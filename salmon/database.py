@@ -70,7 +70,7 @@ def list_migrations():
 
     if not current_version:
         click.secho(
-            f"\nYou have not yet ran a migration. Catch your database up with "
+            "\nYou have not yet ran a migration. Catch your database up with "
             "./run.py migrate",
             fg="magenta",
             bold=True,
@@ -103,7 +103,7 @@ def check_if_migration_is_needed():
         raise click.Abort
     if mig_version > current_version:
         click.secho(
-            f"The database needs updating. Please run `salmon migrate`.\n",
+            "The database needs updating. Please run `salmon migrate`.\n",
             fg="red",
             bold=True,
         )

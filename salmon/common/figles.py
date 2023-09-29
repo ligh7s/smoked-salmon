@@ -57,7 +57,7 @@ def alac_to_flac(filepath):
             [
                 "ffmpeg",
                 # "-y",
-                f"-i",
+                "-i",
                 filepath,
                 "-acodec",
                 "flac",

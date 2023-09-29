@@ -51,7 +51,7 @@ def combine_metadatas(*metadatas, base=None):  # noqa: C901
 
             try:
                 base["tracks"] = combine_tracks(base["tracks"], metadata["tracks"])
-            except TrackCombineError as e:
+            except TrackCombineError:
                 pass
 
             if (

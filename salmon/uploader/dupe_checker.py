@@ -170,7 +170,7 @@ def print_search_results(gazelle_site, results, searchstr):
                     f"({r['groupYear']}) [{r['releaseType']}] ", fg="yellow", nl=False
                 )
                 click.echo(f"[Tags: {', '.join(r['tags'])}] | {url}")
-            except (KeyError, TypeError) as e:
+            except (KeyError, TypeError):
                 continue
 
 
@@ -209,7 +209,7 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
         elif group_id.lower().startswith("d") and offer_deletion:
             raise AbortAndDeleteFolder
         elif group_id.lower().startswith("n") or not group_id.strip():
-            click.echo(f"Uploading to a new torrent group.")
+            click.echo("Uploading to a new torrent group.")
             return None
 
 

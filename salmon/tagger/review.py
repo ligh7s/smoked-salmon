@@ -132,7 +132,7 @@ def _alias_artists(metadata):  # noqa: C901
                     else:
                         artists_to_delete.append(existing.lower())
             break
-        except (IndexError, ValueError) as e:
+        except (IndexError, ValueError):
             click.confirm(
                 click.style("Invalid artist list. Retry?", fg="red"),
                 default=True,
@@ -208,7 +208,7 @@ def _edit_title(metadata):
             metadata["title"] = title.strip()
             return
         click.confirm(
-            click.style(f"The release must have a title. Retry?", fg="magenta"),
+            click.style("The release must have a title. Retry?", fg="magenta"),
             default=True,
             abort=True,
         )
@@ -232,7 +232,7 @@ def _edit_years(metadata):
         except (TypeError, KeyError, ValueError):
             click.confirm(
                 click.style(
-                    f"Invalid values or formatting in the years file. Retry?",
+                    "Invalid values or formatting in the years file. Retry?",
                     fg="magenta",
                 ),
                 default=True,
@@ -247,7 +247,7 @@ def _edit_genres(metadata):
             metadata["genres"] = [g for g in genres.split("\n") if g.strip()]
             return
         click.confirm(
-            click.style(f"You must input at least one genre. Retry?", fg="magenta"),
+            click.style("You must input at least one genre. Retry?", fg="magenta"),
             default=True,
             abort=True,
         )
@@ -283,7 +283,7 @@ def _edit_edition_info(metadata):
         except (TypeError, KeyError, ValueError):
             click.confirm(
                 click.style(
-                    f"Invalid values or formatting in the editions file. Retry?",
+                    "Invalid values or formatting in the editions file. Retry?",
                     fg="magenta",
                 ),
                 default=True,

@@ -20,4 +20,4 @@ class DiscogsBase(BaseScraper):
                 f"/releases/{self.regex.match(url)[1]}", params=params
             )
         except json.decoder.JSONDecodeError as e:
-            raise ScrapeError(f"Discogs page did not return valid JSON.") from e
+            raise ScrapeError("Discogs page did not return valid JSON.") from e

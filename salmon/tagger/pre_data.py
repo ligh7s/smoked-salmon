@@ -169,7 +169,7 @@ def _prompt_encoding():
     while True:
         enc = click.prompt(
             click.style(
-                f"What is the encoding of this release? [a]bort",
+                "What is the encoding of this release? [a]bort",
                 fg="magenta",
                 bold=True,
             ),

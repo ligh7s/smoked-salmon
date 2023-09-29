@@ -1,6 +1,5 @@
 import asyncio
 import os
-import re
 import shutil
 import tempfile
 
@@ -14,11 +13,7 @@ from salmon.images import upload_cover
 
 from salmon.errors import RequestError
 
-from salmon.uploader.spectrals import (
-    generate_lossy_approval_comment,
-    report_lossy_master,
-    make_spectral_bbcode,
-)
+from salmon.uploader.spectrals import make_spectral_bbcode
 
 
 from salmon.sources import SOURCE_ICONS
@@ -68,7 +63,7 @@ def prepare_and_upload(
     torrent_path, torrent_file = generate_torrent(gazelle_site, path)
     files = compile_files(path, torrent_file, metadata)
 
-    click.secho(f"Uploading torrent...", fg="yellow")
+    click.secho("Uploading torrent...", fg="yellow")
     try:
         torrent_id = loop.run_until_complete(gazelle_site.upload(data, files))
         shutil.move(
