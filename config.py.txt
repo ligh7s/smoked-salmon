@@ -7,6 +7,9 @@ DOTTORRENTS_DIR = '/path/to/folder/for/these.torrents'
 DOWNLOAD_QUEUE_FOLDER = '/path/to/folder/for/the/queue'
 PTPIMG_KEY = 'ptpimg-key'
 DISCOGS_TOKEN = 'discogs-token'
+IMGUR_CLIENT_ID = 'imgur-client-id'
+IMGUR_CLIENT_SECRET = 'imgur-client-secret'
+IMGUR_REFRESH_TOKEN = 'imgur-client-refresh-token'
 
 '''If a default tracker is not set and you have more than one tracker in TRACKER_LIST
 then you will be prompted to choose each time you use the script.'''

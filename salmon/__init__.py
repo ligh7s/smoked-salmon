@@ -2,6 +2,8 @@ import config as user_config
 
 DEFAULT_VALUES = {
     "IMGUR_CLIENT_ID": None,
+    "IMGUR_CLIENT_SECRET": None,
+    "IMGUR_REFRESH_TOKEN": None,
     "SIMULTANEOUS_DOWNLOADS": 2,
     "SIMULTANEOUS_SPECTRALS": 3,
     "SIMULTANEOUS_CONVERSIONS": 2,
@@ -44,6 +46,8 @@ DEFAULT_VALUES = {
     "USE_UPC_AS_CATNO": True,
     "DEFAULT_TRACKER": False,
     "MULTI_TRACKER_UPLOAD": True,
+    "RED_SESSION": False,
+    "OPS_SESSION": False,
     "RED_API_KEY": False,
     "ALWAYS_ASK_FOR_REQUEST_FILL": False,
     "CHECK_RECENT_UPLOADS": True,
@@ -52,6 +56,7 @@ DEFAULT_VALUES = {
     "LAST_MINUTE_DUPE_CHECK": False,
     "RED_DOTTORRENTS_DIR": False,
     "OPS_DOTTORRENTS_DIR": False,
+    "TRACKER_LIST": [],
 }
 
 
