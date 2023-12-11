@@ -6,7 +6,7 @@ authors = ["azuline <azuline@riseup.net>"]
 license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.9"
 requests = "^2.31.0"
 click = "^8.1.7"
 bs4 = "^0.0.1"
@@ -33,7 +33,7 @@ flake8 = "^6.1.0"
 
 [tool.black]
 line-length = 88
-target-version = ['py36']
+target-version = ['py39']
 skip-string-normalization = true
 
 [build-system]
