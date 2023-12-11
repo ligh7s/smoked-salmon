@@ -11,7 +11,7 @@ class Searcher(BandcampBase, SearchMixin):
         soup = await self.create_soup(
             self.search_url, params={"q": searchstr}, allow_redirects=False
         )
-        for meta in soup.select(".result-items .searchresult.album .result-info"):
+        for meta in soup.select(".result-items .searchresult.data-search .result-info"):
             try:
                 re_url = self.regex.search(meta.select(".itemurl a")[0].string)
                 rls_url = re.sub(r"\?.+", "", re_url[1])

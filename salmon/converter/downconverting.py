@@ -47,7 +47,7 @@ def _generate_conversion_path_name(path):
     elif re.search("FLAC", foldername, flags=re.IGNORECASE):
         foldername = re.sub("FLAC", "16bit FLAC", foldername, flags=re.IGNORECASE)
     else:
-        foldername += f" [FLAC]"
+        foldername += " [FLAC]"
 
     return os.path.join(os.path.dirname(path), foldername)
 
@@ -75,7 +75,7 @@ def _convert_files(old_path, new_path, files_convert, files_copy):
                     raise click.Abort
                 try:
                     thread.kill()
-                except:  # noqa: E701
+                except:  # noqa: E722
                     pass
 
             if not thread or thread.poll() is not None:

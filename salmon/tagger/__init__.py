@@ -63,7 +63,7 @@ def validate_encoding(ctx, param, value):
     "-e",
     type=click.STRING,
     callback=validate_encoding,
-    help=f"You must specify one of the following encodings if files aren't lossless: "
+    help="You must specify one of the following encodings if files aren't lossless: "
     + ", ".join(TAG_ENCODINGS.keys()),
 )
 @click.option(
@@ -142,10 +142,10 @@ def metadata_validator_base(metadata):
     if metadata["label"] and (
         len(metadata["label"]) < 2 or len(metadata["label"]) > 80
     ):
-        raise InvalidMetadataError(f"Label must be over 2 and under 80 characters.")
+        raise InvalidMetadataError("Label must be over 2 and under 80 characters.")
     if metadata["catno"] and (
         len(metadata["catno"]) < 2 or len(metadata["catno"]) > 80
     ):
-        raise InvalidMetadataError(f"Catno must be over 2 and under 80 characters.")
+        raise InvalidMetadataError("Catno must be over 2 and under 80 characters.")
 
     return metadata

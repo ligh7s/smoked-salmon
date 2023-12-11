@@ -157,7 +157,7 @@ class TagFile:
             try:
                 self.mut.tags[tag_key] = [(int(value), int(total))]
             except ValueError as e:
-                click.secho(f"Can't have non-numeric AAC number tags, sorry!")
+                click.secho("Can't have non-numeric AAC number tags, sorry!")
                 raise e
         elif key in {"tracktotal", "disctotal"}:
             try:
@@ -167,7 +167,7 @@ class TagFile:
             try:
                 self.mut.tags[tag_key] = [(int(track), int(value))]
             except ValueError as e:
-                click.secho(f"Can't have non-numeric AAC number tags, sorry!")
+                click.secho("Can't have non-numeric AAC number tags, sorry!")
                 raise e
         else:
             self.mut.tags[tag_key] = value

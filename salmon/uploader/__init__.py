@@ -45,10 +45,10 @@ from salmon.uploader.spectrals import (
     handle_spectrals_upload_and_deletion,
     post_upload_spectral_check,
     report_lossy_master,
+    generate_lossy_approval_comment,
 )
 from salmon.uploader.upload import (
     concat_track_data,
-    generate_lossy_approval_comment,
     prepare_and_upload,
 )
 from salmon.checks.upconverts import upload_upconvert_test
@@ -92,7 +92,7 @@ loop = asyncio.get_event_loop()
     "-e",
     type=click.STRING,
     callback=validate_encoding,
-    help=f"You must specify one of the following encodings if files aren't lossless: "
+    help="You must specify one of the following encodings if files aren't lossless: "
     + ", ".join(list(TAG_ENCODINGS.keys())),
 )
 @click.option(
@@ -107,12 +107,12 @@ loop = asyncio.get_event_loop()
     callback=salmon.trackers.validate_tracker,
     help=f'Uploading Choices: ({"/".join(salmon.trackers.tracker_list)})',
 )
-@click.option("--request", "-r", default=None, help=f'Pass a request URL or ID')
+@click.option("--request", "-r", default=None, help='Pass a request URL or ID')
 @click.option(
     "--spectrals-after",
     "-a",
     is_flag=True,
-    help=f'Assess / upload / report spectrals after torrent upload',
+    help='Assess / upload / report spectrals after torrent upload',
 )
 def up(
     path,
@@ -225,10 +225,10 @@ def upload(
             click.echo()
         track_data = concat_track_data(tags, audio_info)
     except click.Abort:
-        return click.secho(f"\nAborting upload...", fg="red")
+        return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:
         shutil.rmtree(path)
-        return click.secho(f"\nDeleted folder, aborting upload...", fg="red")
+        return click.secho("\nDeleted folder, aborting upload...", fg="red")
 
     lossy_comment = None
     if spectrals_after:
@@ -256,10 +256,11 @@ def upload(
     # Shallow copy to avoid errors on multiple uploads in one session.
     remaining_gazelle_sites = list(salmon.trackers.tracker_list)
     tracker = gazelle_site.site_code
+    torrent_id = None
     while True:
         # Loop until we don't want to upload to any more sites.
         if not tracker:
-            if spectrals_after:
+            if spectrals_after and torrent_id:
                 # Here we are checking the spectrals after uploading to the first site
                 # if they were not done before.
                 lossy_master, lossy_comment, spectral_urls = post_upload_spectral_check(
@@ -317,7 +318,7 @@ def upload(
         tracker = None
         request_id = None
         if not remaining_gazelle_sites or not config.MULTI_TRACKER_UPLOAD:
-            return click.secho(f"\nDone uploading this release.", fg="green")
+            return click.secho("\nDone uploading this release.", fg="green")
 
 
 def edit_metadata(path, tags, metadata, source, rls_data, recompress):
@@ -419,7 +420,7 @@ def _prompt_source():
     while True:
         sauce = click.prompt(
             click.style(
-                f"What is the source of this release? [a]bort", fg="magenta", bold=True
+                "What is the source of this release? [a]bort", fg="magenta", bold=True
             ),
             default="",
         )

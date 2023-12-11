@@ -20,7 +20,7 @@ def get_metadata(path, tags, rls_data=None):
     Get metadata pertaining to a release from various metadata sources. Have the user
     decide which sources to use, and then combine their information.
     """
-    click.secho(f"\nChecking metadata...", fg="cyan", bold=True)
+    click.secho("\nChecking metadata...", fg="cyan", bold=True)
     searchstrs = make_searchstrs(rls_data["artists"], rls_data["title"])
     kwargs = (
         dict(artists=[a for a, _ in rls_data["artists"]], album=rls_data["title"])
@@ -114,7 +114,7 @@ def _select_choice(choices, rls_data):
         if not tasks:
             continue
 
-        metadatas = loop.run_until_complete(asyncio.gather(*tasks, loop=loop))
+        metadatas = loop.run_until_complete(asyncio.gather(*tasks))
         meta = combine_metadatas(
             *((s, m) for s, m in zip(sources, metadatas) if m), base=rls_data
         )
@@ -165,7 +165,7 @@ def _print_metadata(metadata, metadata_name="Pending"):
     click.echo(f"> GENRES        : {'; '.join(metadata['genres'])}")
     click.echo(f"> RELEASE TYPE  : {metadata['rls_type']}")
     click.echo(f"> COMMENT       : {metadata['comment']}")
-    click.echo(f"> URLS:")
+    click.echo("> URLS:")
     for url in metadata["urls"]:
         click.echo(f">>> {url}")
 

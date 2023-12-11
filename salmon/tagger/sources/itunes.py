@@ -12,8 +12,7 @@ from salmon.tagger.sources.base import MetadataMixin
 ALIAS_GENRE = {
     "Hip-Hop/Rap": {"Hip Hop", "Rap"},
     "R&B/Soul": {"Rhythm & Blues", "Soul"},
-    "Music": {},
-    #Aliasing Music to an empty set because we don't want a genre 'music'
+    "Music": {},  # Aliasing Music to an empty set because we don't want a genre 'music'
 }
 
 
@@ -59,7 +58,7 @@ class Scraper(iTunesBase, MetadataMixin):
                 'content'
             ].split("T")[0]
             return date_string
-        except:
+        except BaseException:
             return None
 
     def parse_release_label(self, soup):

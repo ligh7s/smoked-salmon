@@ -38,7 +38,7 @@ def print_preassumptions(
             )
     if spectrals_after:
         click.secho(
-            f'Assessing spectrals after upload.', fg="yellow",
+            'Assessing spectrals after upload.', fg="yellow",
         )
 
     if lossy and not spectrals:

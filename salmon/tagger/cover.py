@@ -12,7 +12,7 @@ def download_cover_if_nonexistent(path, cover_url):
         if re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE):
             return
     if cover_url:
-        click.secho(f"\nDownloading cover image...", fg="yellow")
+        click.secho("\nDownloading cover image...", fg="yellow")
         _download_cover(path, cover_url)
 
 

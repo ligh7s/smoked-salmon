@@ -287,7 +287,7 @@ def rename_files(path, tags, metadata, source=None):
             move_non_audio_files(directory_move_pairs)
             delete_empty_folders(path)
     else:
-        click.secho(f"\nNo file renaming is recommended.", fg="green")
+        click.secho("\nNo file renaming is recommended.", fg="green")
 
 
 def print_filenames(to_rename):

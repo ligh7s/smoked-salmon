@@ -159,7 +159,7 @@ def checkspecs(tracker, torrent_id, path):
         click.secho("No torrent id provided.", fg="red")
         torrent_id = click.prompt(
             click.style(
-                """Input a torrent id or a URL containing one. 
+                """Input a torrent id or a URL containing one.
                 Tracker in a URL will override -t flag.""",
                 fg="magenta",
                 bold=True,

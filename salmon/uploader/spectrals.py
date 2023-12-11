@@ -36,7 +36,7 @@ def check_spectrals(
     not the files are lossy. If the IDs were not all provided, prompt for spectrals
     to upload.
     """
-    click.secho(f"\nChecking lossy master / spectrals...", fg="cyan", bold=True)
+    click.secho("\nChecking lossy master / spectrals...", fg="cyan", bold=True)
     spectrals_path = create_specs_folder(path)
     if not spectral_ids:
         all_spectral_ids = generate_spectrals_all(path, spectrals_path, audio_info)
@@ -398,7 +398,6 @@ def prompt_lossy_master():
             raise AbortAndDeleteFolder
 
 
-
 def report_lossy_master(
     gazelle_site,
     torrent_id,
@@ -436,7 +435,7 @@ def generate_lossy_approval_comment(source_url, filenames):
     )
     if not (comment or source_url):
         click.secho(
-            f"This release was not uploaded with go, gos, or the queue, "
+            "This release was not uploaded with go, gos, or the queue, "
             "so you must add a comment about the source.",
             fg="red",
         )
@@ -449,7 +448,7 @@ def _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, fil
         comment += "\n\n"
     if source_url:
         comment += f"Sourced from: {source_url}\n\n"
-    comment+=make_spectral_bbcode(filenames,spectral_urls)
+    comment += make_spectral_bbcode(filenames, spectral_urls)
     return comment
 
 
@@ -480,7 +479,7 @@ def post_upload_spectral_check(
     # need to refactor bbcode to not be repeated.
     if spectral_urls:
         spectrals_bbcode = make_spectral_bbcode(list(track_data.keys()), spectral_urls)
-        a = loop.run_until_complete(
+        loop.run_until_complete(
             gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode)
         )
 

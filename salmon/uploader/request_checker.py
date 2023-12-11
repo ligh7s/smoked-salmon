@@ -79,13 +79,12 @@ def print_request_results(gazelle_site, results, searchstr):
                 click.secho(f"{' or '.join(r['formatList'])} / ", nl=False)
                 click.secho(f"{' or '.join(r['mediaList'])} / ")
 
-            except (KeyError, TypeError) as e:
+            except (KeyError, TypeError):
                 continue
 
 
 def _print_request_details(gazelle_site, req):
     """Print request details."""
-    group_info = {}
     click.secho("\nSelected Request:")
     click.secho(gazelle_site.request_url(req['requestId']))
     click.secho(f" {req['artist']}", fg="cyan", nl=False)
@@ -156,10 +155,10 @@ def _prompt_for_request_id(gazelle_site, results):
             request_id = parse.parse_qs(parse.urlparse(request_id).query)['id'][0]
             return request_id
         elif request_id.lower().startswith("n"):
-            click.echo(f"Not filling a request")
+            click.echo("Not filling a request")
             return None
         elif not request_id.strip():
-            click.echo(f"Not filling a request")
+            click.echo("Not filling a request")
             return None
 
 
@@ -189,5 +188,5 @@ def _confirm_request_id(gazelle_site, request_id):
         if resp == "y":
             return True
         elif resp == "n":
-            click.secho(f"Not filling this request", fg="red")
+            click.secho("Not filling this request", fg="red")
             return False

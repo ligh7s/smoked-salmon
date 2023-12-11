@@ -65,8 +65,6 @@ class BaseGazelleApi:
         self.site_string = 'RED'
         self.dot_torrents_dir = config.DOTTORRENTS_DIR
         self.cookie = config.RED_SESSION
-        if 'SITE_API_KEY' in tracker_details.keys():
-            self.api_key = config.RED_API_KEY
 
         self.session = requests.Session()
         self.session.headers.update(self.headers)
@@ -95,12 +93,12 @@ class BaseGazelleApi:
         self.passkey = acctinfo["passkey"]
 
     @sleep_and_retry
-    @limits(5, 10)
+    @limits(10, 10)
     async def request(self, action, **kwargs):
         """
         Make a request to the site API, accomodating the rate limit.
         This uses the ratelimit library to ensure that
-        the 5 requests / 10 seconds rate limit isn't violated, while allowing
+        the 10 requests / 10 seconds rate limit isn't violated, while allowing
         short bursts of requests without a 2 second wait after each one
         (at the expense of a potentially longer wait later).
         """
@@ -121,7 +119,7 @@ class BaseGazelleApi:
             raise RateLimitError
         except (ConnectTimeout, ReadTimeout):
             click.secho(
-                f"Connection to API timed out, try script again later. Gomen!",
+                "Connection to API timed out, try script again later. Gomen!",
                 fg="red",
             )
             sys.exit(1)
@@ -419,7 +417,7 @@ class BaseGazelleApi:
 
     def parse_torrent_id_from_filled_request_page(self, text):
         """
-        Given the HTML (ew) response from filling a request, 
+        Given the HTML (ew) response from filling a request,
         find the filling torrent (hopefully our upload)
         """
         torrent_ids = []
@@ -442,7 +440,7 @@ class BaseGazelleApi:
                 torrent_string = re.findall(
                     "\((.*?)\) \(", entry.find("a").next_sibling
                 )[0].split(" - ")
-            except:
+            except BaseException:
                 continue
             artist = torrent_string[0]
             if len(torrent_string) > 1:
