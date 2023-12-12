@@ -17,11 +17,6 @@ loop = asyncio.get_event_loop()
 
 class RedApi(BaseGazelleApi):
     def __init__(self):
-        self.headers = {
-            "Connection": "keep-alive",
-            "Cache-Control": "max-age=0",
-            "User-Agent": config.USER_AGENT,
-        }
         self.site_code = 'RED'
         self.base_url = 'https://redacted.ch'
         self.tracker_url = 'https://flacsfor.me'
@@ -35,16 +30,11 @@ class RedApi(BaseGazelleApi):
         else:
             self.dot_torrents_dir = config.DOTTORRENTS_DIR
 
-        self.session = requests.Session()
-        self.session.headers.update(self.headers)
-
-        self.authkey = None
-        self.passkey = None
-        self.authenticate()
+        super().__init__()
 
     async def report_lossy_master(self, torrent_id, comment, source):
         """Automagically report a torrent for lossy master/web approval.
-         Use LWA if the torrent is web, otherwise LMA."""
+        Use LWA if the torrent is web, otherwise LMA."""
 
         url = self.base_url + "/reportsv2.php"
         params = {"action": "takereport"}

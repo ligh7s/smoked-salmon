@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+from distutils.dir_util import copy_tree
 from copy import copy
 from string import Formatter
 
@@ -15,33 +16,40 @@ from salmon.constants import (
 from salmon.errors import UploadError
 
 
-def rename_folder(path, metadata, check=True):
+def rename_folder(path, metadata, auto_rename, check=True):
     """
     Create a revised folder name from the new metadata and present it to the
     user. Have them decide whether or not to accept the folder name.
     Then offer them the ability to edit the folder name in a text editor
     before the renaming occurs.
+    For scene releases, the name of the original folder is kept untouched, and
+    the folder is copied to the download folder.
     """
     old_base = os.path.basename(path)
     new_base = generate_folder_name(metadata)
+    if metadata['scene']:
+        new_base = old_base
+        auto_rename = True
 
     if check:
         click.secho("\nRenaming folder...", fg="cyan", bold=True)
         click.echo(f"Old folder name        : {old_base}")
         click.echo(f"New pending folder name: {new_base}")
-        if not click.confirm(
-            click.style(
-                "\nWould you like to replace the original folder name?",
-                fg="magenta",
-                bold=True,
-            ),
-            default=True,
-        ):
-            return path
+        if not auto_rename:
+            if not click.confirm(
+                click.style(
+                    "\nWould you like to replace the original folder name?",
+                    fg="magenta",
+                    bold=True,
+                ),
+                default=True,
+            ):
+                return path
 
-        new_base = _edit_folder_interactive(new_base)
+        new_base = _edit_folder_interactive(new_base, auto_rename)
 
-    new_path = os.path.join(os.path.dirname(path), new_base)
+    #new_path = os.path.join(os.path.dirname(path), new_base)
+    new_path = os.path.join(config.DOWNLOAD_DIRECTORY, new_base)
     if os.path.isdir(new_path) and old_base != new_base:
         if not check or click.confirm(
             click.style(
@@ -57,8 +65,8 @@ def rename_folder(path, metadata, check=True):
     new_path_dirname = os.path.dirname(new_path)
     if not os.path.exists(new_path_dirname):
         os.makedirs(new_path_dirname)
-    os.rename(path, new_path)
-    click.secho(f"Renamed folder to {new_base}.", fg="yellow")
+    copy_tree(path, new_path)
+    click.secho(f"Copied folder to {new_base}.", fg="yellow")
     return new_path
 
 
@@ -120,8 +128,10 @@ def _fix_format(metadata, keys):
     return sub_metadata
 
 
-def _edit_folder_interactive(foldername):
+def _edit_folder_interactive(foldername, auto_rename):
     """Allow the user to edit the pending folder name in a text editor."""
+    if auto_rename:
+        return foldername
     if not click.confirm(
         click.style(
             "Is the new folder name acceptable? ([n] to edit)", fg="magenta", bold=True

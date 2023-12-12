@@ -1,7 +1,7 @@
 import asyncio
+import html
 import importlib
 import os
-import html
 from urllib import parse
 
 import click

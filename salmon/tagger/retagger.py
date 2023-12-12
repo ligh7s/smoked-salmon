@@ -18,7 +18,7 @@ from salmon.tagger.tagfile import TagFile
 Change = namedtuple("Change", ["tag", "old", "new"])
 
 
-def tag_files(path, tags, metadata):
+def tag_files(path, tags, metadata, auto_rename):
     """
     Wrapper function that calls the functions that create and print the
     proposed changes, and then prompts for confirmation to retag the file.
@@ -29,7 +29,7 @@ def tag_files(path, tags, metadata):
     album_changes = collect_album_data(metadata)
     track_changes = create_track_changes(tags, metadata)
     print_changes(album_changes, track_changes, next(iter(tags.values())))
-    if click.confirm(
+    if auto_rename or click.confirm(
         click.style(
             "\nWould you like to auto-tag the files with the updated metadata?",
             fg="magenta",
@@ -224,7 +224,7 @@ def retag_files(path, album_changes, track_changes):
     click.secho("Retagged files.", fg="green")
 
 
-def rename_files(path, tags, metadata, source=None):
+def rename_files(path, tags, metadata, auto_rename, source=None):
     """
     Call functions that generate the proposed changes, then print and prompt
     for confirmation. Apply the changes if user agrees.
@@ -263,7 +263,7 @@ def rename_files(path, tags, metadata, source=None):
 
     if to_rename:
         print_filenames(to_rename)
-        if click.confirm(
+        if auto_rename or click.confirm(
             click.style(
                 "\nWould you like to rename the files?", fg="magenta", bold=True
             ),

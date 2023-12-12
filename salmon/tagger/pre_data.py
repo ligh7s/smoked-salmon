@@ -22,6 +22,7 @@ EMPTY_METADATA = {
     "format": None,
     "encoding": None,
     "encoding_vbr": None,
+    "scene": None,
     "source": None,
     "cover": None,
     "upc": None,
@@ -36,6 +37,7 @@ def construct_rls_data(
     audio_info,
     source,
     encoding,
+    scene=False,
     existing=None,
     overwrite=False,
     prompt_encoding=False,
@@ -62,6 +64,7 @@ def construct_rls_data(
         del existing["artists"]
         metadata = {**metadata, **existing}
     metadata["source"] = source
+    metadata["scene"] = scene
     metadata["format"] = parse_format(next(iter(tags.keys())))
 
     audio_track = next(iter(audio_info.values()))

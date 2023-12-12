@@ -10,7 +10,7 @@ from salmon import config
 from salmon.common import AliasedCommands, commandgroup
 from salmon.database import DB_PATH
 from salmon.errors import ImageUploadFailed
-from salmon.images import imgur, ptpimg, emp, catbox
+from salmon.images import catbox, emp, imgur, ptpimg
 
 loop = asyncio.get_event_loop()
 
@@ -110,13 +110,13 @@ def chunker(seq, size=4):
         yield seq[pos : pos + size]
 
 
-def upload_cover(path):
+def upload_cover(path, scene=False):
     """
     Search a folder for a cover image, and if found, upload it.
     The image url is returned, otherwise None.
     """
     for filename in os.listdir(path):
-        if re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE):
+        if re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE) or (scene and re.match(r"^.*\.(jpe?g|png)$", filename, flags=re.IGNORECASE)):
             click.secho(
                 f"Uploading cover to {config.COVER_UPLOADER}...", fg="yellow", nl=False
             )

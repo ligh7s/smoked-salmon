@@ -7,10 +7,10 @@ from requests import RequestException
 from salmon.common.aliases import AliasedCommands  # noqa: F401
 from salmon.common.constants import RE_FEAT  # noqa: F401
 from salmon.common.figles import (  # noqa: F401
+    alac_to_flac,
     compress,
     create_relative_path,
     get_audio_files,
-    alac_to_flac,
 )
 from salmon.common.regexes import (  # noqa: F401
     parse_copyright,
@@ -19,12 +19,12 @@ from salmon.common.regexes import (  # noqa: F401
 )
 from salmon.common.strings import (  # noqa: F401
     fetch_genre,
+    format_size,
     less_uppers,
     make_searchstrs,
     normalize_accents,
     strip_template_keys,
     truncate,
-    format_size,
 )
 from salmon.errors import ScrapeError
 
@@ -61,7 +61,7 @@ prompt_async = Prompt()
 
 def flush_stdin():
     try:
-        from termios import tcflush, TCIOFLUSH
+        from termios import TCIOFLUSH, tcflush
 
         tcflush(sys.stdin, TCIOFLUSH)
     except:  # noqa E722

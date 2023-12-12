@@ -10,8 +10,8 @@ from json.decoder import JSONDecodeError
 import click
 import requests
 from bs4 import BeautifulSoup
-
-
+from heybrochecklog import score
+from ratelimit import limits, sleep_and_retry
 from requests.exceptions import ConnectTimeout, ReadTimeout
 
 from salmon import config
@@ -59,13 +59,7 @@ class BaseGazelleApi:
             "Cache-Control": "max-age=0",
             "User-Agent": config.USER_AGENT,
         }
-        self.site_code = 'RED'
-        self.base_url = 'https://redacted.ch'
-        self.tracker_url = 'https://flacsfor.me'
-        self.site_string = 'RED'
         self.dot_torrents_dir = config.DOTTORRENTS_DIR
-        self.cookie = config.RED_SESSION
-
         self.session = requests.Session()
         self.session.headers.update(self.headers)
 
@@ -240,6 +234,18 @@ class BaseGazelleApi:
             lambda: self.session.get(url, params={'page': page}, headers=self.headers),
         )
         return resp
+    
+    async def fetch_riplog(self, torrentid):
+        """Fetch a page of the log. No search. Search envokes the sphynx
+        Doesn't use the API as there is no API endpoint."""
+        url = f'{self.base_url}/torrents.php'
+        resp = await self.aiosession.get(
+            url, headers=self.headers, params={
+                'action': 'loglist',
+                'torrentid': torrentid
+            }
+        )
+        return re.sub(r" ?\([^)]+\)", "", resp.text)
 
     def get_uploads_from_log(self, max_pages=10):
         'Crawls some pages of the log and returns uploads'
@@ -283,7 +289,12 @@ class BaseGazelleApi:
                             + self.request_url(resp['response']['requestid']),
                             fg="green",
                         )
-                return resp["response"]["torrentid"]
+                torrent_id = 0
+                if "torrentid" in resp["response"]:
+                    torrent_id = resp["response"]["torrentid"]
+                elif "torrentId" in resp["response"]:
+                    torrent_id = resp["response"]["torrentId"]
+                return torrent_id
         except TypeError:
             raise RequestError(f"API upload failed, response text: {resp.text}")
 

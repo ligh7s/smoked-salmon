@@ -66,6 +66,11 @@ def combine_metadatas(*metadatas, base=None):  # noqa: C901
                 base["label"] = metadata["label"]
                 base["catno"] = metadata["catno"]
 
+            if not base["label"] and metadata["label"]:
+                base["label"] = metadata["label"]
+                if not base["catno"] and metadata["catno"]:
+                    base["catno"] = metadata["catno"]
+
             if metadata["comment"]:
                 if not base["comment"]:
                     base["comment"] = metadata["comment"]
