@@ -47,7 +47,7 @@ def check_required_tags(tags):
         for t in ["title", "artist", "album", "tracknumber"]:
             missing = []
             if not getattr(tags, t, False):
-                missing.add(t)
+                missing.append(t)
             if missing:
                 offending_files.append(f'{fln} ({", ".join(missing)})')
 
