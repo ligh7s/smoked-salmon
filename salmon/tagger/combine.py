@@ -129,8 +129,10 @@ def combine_tracks(base, meta):
             except StopIteration:
                 raise TrackCombineError(f"Disc {disc} track {num} does not exist.")
 
-            if re_strip(track["title"]) != re_strip(btrack["title"]):
+            if re_strip(track["title"]) != re_strip(btrack["title"]) and btrack["title"] is not None:
                 continue
+            if btrack["title"] is None:
+                btrack["title"] = track["title"]
             base_artists = {(re_strip(a[0]), a[1]) for a in btrack["artists"]}
             btrack["artists"] = list(btrack["artists"])
             for a in track["artists"]:
