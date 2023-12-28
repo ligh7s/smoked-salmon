@@ -40,6 +40,7 @@ DEFAULT_VALUES = {
     "ADD_EDITION_TITLE_TO_ALBUM_TAG": True,
     "WEB_HOST": "http://127.0.0.1:55110",
     "WEB_PORT": 55110,
+    "WEB_BIND": '127.0.0.1',
     "WEB_STATIC_ROOT_URL": "/static",
     "COMPRESS_SPECTRALS": False,
     "LMA_COMMENT_IN_T_DESC": False,
