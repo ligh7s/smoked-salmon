@@ -282,7 +282,8 @@ def rename_files(path, tags, metadata, auto_rename, source=None):
                     )
                 )
                 new_path, new_path_ext = os.path.splitext(os.path.join(path, new_name))
-                new_path = new_path[: 200 - len(new_path_ext)] + new_path_ext
+               # new_path = new_path[: 200 - len(new_path_ext) + len(os.path.dirname(path))] + new_path_ext
+                new_path = new_path + new_path_ext
                 os.rename(os.path.join(path, filename), new_path)
             move_non_audio_files(directory_move_pairs)
             delete_empty_folders(path)
