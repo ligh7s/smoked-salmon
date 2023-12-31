@@ -355,7 +355,7 @@ def prompt_spectrals(spectral_ids, lossy_master, check_lma):
         )
         if ids.strip() == "*":
             return spectral_ids
-        elif is.strip() == "0":
+        elif ids.strip() == "0":
             return None
         ids = [i.strip() for i in ids.split()]
         if not ids and lossy_master and check_lma:
