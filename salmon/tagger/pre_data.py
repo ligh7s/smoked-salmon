@@ -121,7 +121,7 @@ def create_track_list(tags, overwrite):
     for _, track in sorted(tags.items(), key=lambda k: k):
         trackindex += 1
         discnumber = track.discnumber or "1"
-        tracknumber = track.tracknumber or str(trackindex)
+        tracknumber = track.tracknumber if track.tracknumber and int(track.tracknumber) > 0 else str(trackindex)
         tracks[discnumber][tracknumber] = {
             "track#": tracknumber,
             "disc#": discnumber,
@@ -137,10 +137,10 @@ def create_track_list(tags, overwrite):
             "streamable": None,
         }
         if overwrite:
-            tracks[track.discnumber][track.tracknumber]["artists"] = []
-            tracks[track.discnumber][track.tracknumber]["replay_gain"] = None
-            tracks[track.discnumber][track.tracknumber]["peak"] = None
-            tracks[track.discnumber][track.tracknumber]["isrc"] = None
+            tracks[discnumber][tracknumber]["artists"] = []
+            tracks[discnumber][tracknumber]["replay_gain"] = None
+            tracks[discnumber][tracknumber]["peak"] = None
+            tracks[discnumber][tracknumber]["isrc"] = None
     return dict(tracks)
 
 

@@ -91,6 +91,8 @@ def standardize_tags(path):
     """
     for filename in get_audio_files(path):
         mut = mutagen.File(os.path.join(path, filename))
+        if not mut.tags:
+            mut.tags = []
         found_aliased = set()
         for tag, aliases in STANDARDIZED_TAGS.items():
             for alias in aliases:

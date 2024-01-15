@@ -262,7 +262,8 @@ def upload(
             searchstrs = generate_dupe_check_searchstrs(
                 rls_data["artists"], rls_data["title"], rls_data["catno"]
             )
-            group_id = check_existing_group(gazelle_site, searchstrs)
+            if len(searchstrs) > 0:
+                group_id = check_existing_group(gazelle_site, searchstrs)
 
         if spectrals_after:
             lossy_master = False
