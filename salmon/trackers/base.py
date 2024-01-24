@@ -59,6 +59,8 @@ class BaseGazelleApi:
             "Cache-Control": "max-age=0",
             "User-Agent": config.USER_AGENT,
         }
+        if self.api_key:
+            self.headers.update({"Authorization": self.api_key})
         self.dot_torrents_dir = config.DOTTORRENTS_DIR
         self.session = requests.Session()
         self.session.headers.update(self.headers)
@@ -77,8 +79,9 @@ class BaseGazelleApi:
 
     def authenticate(self):
         """Make a request to the site API with the saved cookie and get our authkey."""
-        self.session.cookies.clear()
-        self.session.cookies["session"] = self.cookie
+        if not self.api_key:
+            self.session.cookies.clear()
+            self.session.cookies["session"] = self.cookie
         try:
             acctinfo = loop.run_until_complete(self.request("index"))
         except RequestError:
