@@ -51,9 +51,7 @@ async def create_app_async():
 
 
 def add_routes(app):
-    app.router.add_static(
-        "/static", join(dirname(__file__), "static"), follow_symlinks=True
-    )
+    app.router.add_static("/static", join(dirname(__file__), "static"))
     app.router.add_route("GET", "/", handle_index)
     app.router.add_route("GET", "/spectrals", spectrals.handle_spectrals)
     app["static_root_url"] = config.WEB_STATIC_ROOT_URL
