@@ -11,7 +11,6 @@ from salmon.database import DB_PATH
 
 async def handle_spectrals(request, **kwargs):
     active_spectrals = get_active_spectrals()
-    print(active_spectrals)
     if active_spectrals:
         active_spectrals['now'] = datetime.datetime.now()
         return render_template("spectrals.html", request, active_spectrals)
