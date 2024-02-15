@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import traceback
 from collections import namedtuple
 from random import choice
 from string import Formatter
@@ -64,10 +65,12 @@ class BaseScraper:
                 self.url + url, params=params, headers=headers, timeout=7
             )
             if result.status_code != 200:
-                raise ScrapeError(f"Status code {result.status_code}.", result.json())
+                class_hierarchy = ' -> '.join([cls.__name__ for cls in self.__class__.mro()[:-1]])
+                traceback.print_stack()
+                raise ScrapeError(f"{self.__class__.__name__}({class_hierarchy}): Status code {result.status_code}.", result.json())
             return result.json()
         except json.decoder.JSONDecodeError as e:
-            raise ScrapeError("Did not receive JSON from API.") from e
+            raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
 
     async def create_soup(self, url, params=None, headers=None, **kwargs):
         """

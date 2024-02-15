@@ -1,15 +1,13 @@
 import asyncio
 import re
-from urllib import parse
 from difflib import SequenceMatcher as SM
+from urllib import parse
 
 import click
 
-
-from salmon.common import RE_FEAT, make_searchstrs
-from salmon.errors import AbortAndDeleteFolder
-from salmon.errors import RequestError
 from salmon import config
+from salmon.common import RE_FEAT, make_searchstrs
+from salmon.errors import AbortAndDeleteFolder, RequestError
 
 loop = asyncio.get_event_loop()
 

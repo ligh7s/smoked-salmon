@@ -19,8 +19,12 @@ def download_cover_if_nonexistent(path, cover_url):
 def _download_cover(path, cover_url):
     ext = os.path.splitext(cover_url)[1]
     c = "c" if config.LOWERCASE_COVER else "C"
-    stream = requests.get(cover_url, stream=True)
-    with open(os.path.join(path, f"{c}over{ext}"), "wb") as f:
-        for chunk in stream.iter_content(chunk_size=5096):
-            if chunk:
-                f.write(chunk)
+    headers = {'User-Agent': 'smoked-salmon-v1'}
+    stream = requests.get(cover_url, stream=True, headers=headers)
+    if stream.status_code < 400:
+        with open(os.path.join(path, f"{c}over{ext}"), "wb") as f:
+            for chunk in stream.iter_content(chunk_size=5096):
+                if chunk:
+                    f.write(chunk)
+    else:
+        click.secho(f"\nFailed to download cover image (ERROR {stream.status_code})", fg="red")

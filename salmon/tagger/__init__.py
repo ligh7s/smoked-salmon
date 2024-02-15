@@ -72,7 +72,13 @@ def validate_encoding(ctx, param, value):
     is_flag=True,
     help="Whether or not to use the original metadata.",
 )
-def tag(path, source, encoding, overwrite):
+@click.option(
+    "--auto-rename",
+    "-n",
+    is_flag=True,
+    help=f'Rename files and folders automatically',
+)
+def tag(path, source, encoding, overwrite, auto_rename):
     """Interactively tag an album"""
     click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
     standardize_tags(path)
@@ -84,12 +90,12 @@ def tag(path, source, encoding, overwrite):
 
     metadata = get_metadata(path, tags, rls_data)
     metadata = review_metadata(metadata, metadata_validator_base)
-    tag_files(path, tags, metadata)
+    tag_files(path, tags, metadata, auto_rename)
 
     download_cover_if_nonexistent(path, metadata["cover"])
     tags = check_tags(path)
-    path = rename_folder(path, metadata)
-    rename_files(path, tags, metadata)
+    path = rename_folder(path, metadata, auto_rename)
+    rename_files(path, tags, metadata, auto_rename)
     check_folder_structure(path)
     click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
 
@@ -143,6 +149,8 @@ def metadata_validator_base(metadata):
         len(metadata["label"]) < 2 or len(metadata["label"]) > 80
     ):
         raise InvalidMetadataError("Label must be over 2 and under 80 characters.")
+    if "records dk" in metadata["label"].lower():
+        raise InvalidMetadataError("Records DK is not a label. It's a platform for releasing albums. Please change the label (e.g Self Released)")
     if metadata["catno"] and (
         len(metadata["catno"]) < 2 or len(metadata["catno"]) > 80
     ):

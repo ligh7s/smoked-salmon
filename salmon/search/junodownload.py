@@ -30,7 +30,8 @@ class Searcher(JunodownloadBase, SearchMixin):
                 rls_id = re.search(r"/products/[^/]+/([\d-]+)", su_title["href"])[1]
                 title = su_title.string
 
-                right_blob = meta.find('div', attrs={'class': 'text-sm mb-3 mb-lg-3'})
+                #right_blob = meta.find('div', attrs={'class': 'text-sm mb-3 mb-lg-3'})
+                right_blob = meta.find('div', attrs={'class': 'text-sm text-muted mt-3'})
 
                 right_blob_elements_count = len(
                     right_blob.get_text(separator="|").strip().split("|")
@@ -39,7 +40,7 @@ class Searcher(JunodownloadBase, SearchMixin):
                     # skip item missing one or more of: catno, date or genre
                     continue
 
-                date = right_blob.find('br').next_sibling.strip()
+                date = right_blob.find('br').next.strip()
                 year = int(date[-2:])
 
                 if 40 <= year <= 99:

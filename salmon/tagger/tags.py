@@ -47,7 +47,7 @@ def check_required_tags(tags):
         for t in ["title", "artist", "album", "tracknumber"]:
             missing = []
             if not getattr(tags, t, False):
-                missing.add(t)
+                missing.append(t)
             if missing:
                 offending_files.append(f'{fln} ({", ".join(missing)})')
 
@@ -91,6 +91,8 @@ def standardize_tags(path):
     """
     for filename in get_audio_files(path):
         mut = mutagen.File(os.path.join(path, filename))
+        if not mut.tags:
+            mut.tags = []
         found_aliased = set()
         for tag, aliases in STANDARDIZED_TAGS.items():
             for alias in aliases:

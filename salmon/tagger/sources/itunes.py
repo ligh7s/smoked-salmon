@@ -1,8 +1,7 @@
+import json
 import re
 from collections import defaultdict
 from datetime import datetime
-
-import json
 
 from salmon.common import RE_FEAT, parse_copyright
 from salmon.errors import ScrapeError
@@ -19,7 +18,7 @@ ALIAS_GENRE = {
 class Scraper(iTunesBase, MetadataMixin):
     def parse_release_title(self, soup):
         try:
-            title = soup.select(".product-name")[0].text.strip()
+            title = soup.find("meta", {'name':'apple:title'})['content'].strip()
             return RE_FEAT.sub("", title)
         except (TypeError, IndexError) as e:
             raise ScrapeError("Failed to parse scraped title.") from e
@@ -27,18 +26,13 @@ class Scraper(iTunesBase, MetadataMixin):
     def parse_cover_url(self, soup):
         try:
             # Just choosing the last artwork url here.
-            art = (
-                soup.select(".product-lockup__artwork-for-product")[0]
-                .img['srcset']
-                .split(",")
-            )
-            return art[-1].split()[0]
+            return soup.find("meta", {'property':'og:image'})['content'].strip()
         except (TypeError, IndexError) as e:
             raise ScrapeError("Could not parse cover URL.") from e
 
     def parse_genres(self, soup):
         try:
-            info = json.loads(soup.find(attrs={"name": "schema:music-album"}).text)
+            info = json.loads(soup.find("script", {"id": "schema:music-album"}).text)
             genres = {g for gs in info['genre'] for g in ALIAS_GENRE.get(gs, [gs])}
             # either replace with alias (which can be more than one tag) or return untouched.
             return genres
@@ -50,6 +44,17 @@ class Scraper(iTunesBase, MetadataMixin):
             return int(re.search(r"(\d{4})", self.parse_release_date(soup))[1])
         except TypeError as e:
             raise ScrapeError("Could not parse release year.") from e
+
+    def parse_release_type(self, soup):
+        try:
+            title = soup.find("meta", {'name':'apple:title'})['content'].strip()
+            if re.match(r".*\sEP$", title, re.IGNORECASE):
+                return "EP"
+            if re.match(r".*\sSingle$", title, re.IGNORECASE):
+                return "Single"
+            return "Album"
+        except TypeError as e:
+            raise ScrapeError("Could not parse release type.") from e
 
     def parse_release_date(self, soup):
         # This can't be enough. Can it?
@@ -63,8 +68,10 @@ class Scraper(iTunesBase, MetadataMixin):
 
     def parse_release_label(self, soup):
         try:
+            info = json.loads(soup.find("script", {"id": "serialized-server-data"}).text)
+            copyright = soup.find("p", {"data-testid":"tracklist-footer-description"}).text
             return parse_copyright(
-                soup.select(".song-copyright")[0].string.lower().title()
+                copyright
             )
         except IndexError as e:
             raise ScrapeError("Could not parse record label.") from e

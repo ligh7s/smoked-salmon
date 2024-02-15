@@ -6,7 +6,7 @@ from salmon.sources.discogs import DiscogsBase
 from salmon.sources.itunes import iTunesBase
 from salmon.sources.junodownload import JunodownloadBase
 from salmon.sources.musicbrainz import MusicBrainzBase
-from salmon.sources.tidal import TidalBase
+#from salmon.sources.tidal import TidalBase
 
 SOURCE_ICONS = {
     "Bandcamp": "https://ptpimg.me/1b382r.png",
@@ -16,5 +16,5 @@ SOURCE_ICONS = {
     "iTunes": "https://ptpimg.me/5d47fv.png",
     "Junodownload": "https://ptpimg.me/2852h1.png",
     "MusicBrainz": "https://ptpimg.me/y87lp2.png",
-    "Tidal": "https://ptpimg.me/dhyvs6.png",
+#    "Tidal": "https://ptpimg.me/dhyvs6.png",
 }

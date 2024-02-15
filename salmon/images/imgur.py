@@ -10,6 +10,7 @@ CLIENT = ImgurAPI(
 )
 
 
+
 class ImageUploader:
     def upload_file(self, filename):
         try:
