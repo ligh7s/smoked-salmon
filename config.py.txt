@@ -17,4 +17,14 @@ DEFAULT_TRACKER = 'RED'
 RED_SESSION = 'get-from-site-cookie' #Required for now. (waiting on reports api support)
 OPS_SESSION = 'get-from-site-cookie'
 RED_API_KEY = 'red-api-key' #Needs uploading privileges. Optional for now. Some things still use session.
+OPS_API_KEY = 'ops-api-key' #Needs uploading privileges. Optional for now. Some things still use session.
 TRACKER_LIST=['RED','OPS'] #Remove one of these if you don't want multi-tracker support.
+
+#RUTORRENT UPLOAD, works with xmlrpc
+OPS_LABEL = 'ops'
+RED_LABEL = 'red'
+OPS_DIR = '/downloads/complete/orpheus'
+RED_DIR = '/downloads/complete/redacted'
+TRACKER_DIRS = {'OPS': OPS_DIR, 'RED': RED_DIR}
+TRACKER_LABELS = {'OPS': OPS_LABEL, 'RED': RED_LABEL}
+RUTORRENT_URL = "http://RUTORRENT_ADDRESS:9380/plugins/rpc/rpc.php"

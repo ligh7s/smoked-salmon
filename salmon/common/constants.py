@@ -9,6 +9,7 @@ SPLIT_CHARS = (
 )
 
 COPYRIGHT_SEARCHES = (
+    r".* \d{4} (.*)$",
     r"marketed by (.+?) under",
     r"(?:, )?under(?: exclusive)? licen(?:s|c)e to ([^,]+)",
     r"d/b/a (.+)",

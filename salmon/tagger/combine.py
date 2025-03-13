@@ -1,5 +1,6 @@
 from collections import defaultdict
 from itertools import chain
+from unidecode import unidecode
 
 from salmon.common import re_strip
 from salmon.errors import TrackCombineError
@@ -66,6 +67,11 @@ def combine_metadatas(*metadatas, base=None):  # noqa: C901
                 base["label"] = metadata["label"]
                 base["catno"] = metadata["catno"]
 
+            if not base["label"] and metadata["label"]:
+                base["label"] = metadata["label"]
+                if not base["catno"] and metadata["catno"]:
+                    base["catno"] = metadata["catno"]
+
             if metadata["comment"]:
                 if not base["comment"]:
                     base["comment"] = metadata["comment"]
@@ -123,9 +129,14 @@ def combine_tracks(base, meta):
                 btrack = next(btracks)
             except StopIteration:
                 raise TrackCombineError(f"Disc {disc} track {num} does not exist.")
-
-            if re_strip(track["title"]) != re_strip(btrack["title"]):
+            # Use unidecode comparison when there are accents in the title
+            if re_strip(unidecode(track["title"])) != re_strip(unidecode(btrack["title"])) and btrack["title"] is not None:
                 continue
+            if btrack["title"] is None:
+                btrack["title"] = track["title"]
+            # Scraped title is the same than title when ignoring metadatas, and it contains accents and special characters, prefer that one.
+            if re_strip(track["title"]) != re_strip(unidecode(track["title"])) and re_strip(unidecode(track["title"])) == re_strip(unidecode(btrack["title"])):
+                btrack["title"] = track["title"]
             base_artists = {(re_strip(a[0]), a[1]) for a in btrack["artists"]}
             btrack["artists"] = list(btrack["artists"])
             for a in track["artists"]:

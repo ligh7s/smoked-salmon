@@ -41,6 +41,7 @@ class MetadataMixin(ABC):
             "tracks": self.parse_tracks(soup),
             "upc": self.parse_upc(soup),
             "comment": self.parse_comment(soup),
+            "scene": False,
             "encoding": None,
             "encoding_vbr": None,
             "media": None,
@@ -97,7 +98,7 @@ class MetadataMixin(ABC):
         num_tracks = len(
             list(chain.from_iterable([d.values() for d in data["tracks"].values()]))
         )
-        if re.search(r"E\.?P\.?$", data["title"]):
+        if re.search(r"E\.?P\.?$", data["title"], re.IGNORECASE):
             return (
                 re.sub(r" ?-? *E\.?P\.?$", "", data["title"], flags=re.IGNORECASE),
                 "EP",
@@ -111,8 +112,8 @@ class MetadataMixin(ABC):
             return data["title"], "Soundtrack"
         elif len([a for a in data["artists"] if a[1] == "main"]) > 4:
             return data["title"], "Compilation"
-        elif num_tracks < 3:
-            return data["title"], "Single"
+        #elif num_tracks < 3:
+        #    return data["title"], "Single"
         elif num_tracks < 5:
             return data["title"], "EP"
         return data["title"], data["rls_type"]

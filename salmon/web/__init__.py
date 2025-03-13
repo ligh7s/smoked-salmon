@@ -19,7 +19,7 @@ loop = asyncio.get_event_loop()
 def web():
     """Start the salmon web server"""
     app = create_app()  # noqa: F841
-    click.secho(f"Running webserver on http://127.0.0.1:{config.WEB_PORT}", fg="cyan")
+    click.secho(f"Running webserver on http://{config.WEB_HOST}:{config.WEB_PORT}", fg="cyan")
     loop.run_forever()
 
 
@@ -30,7 +30,7 @@ def create_app():
         app, loader=jinja2.FileSystemLoader(join(dirname(__file__), "templates"))
     )
     return loop.run_until_complete(
-        loop.create_server(app.make_handler(), host="127.0.0.1", port=config.WEB_PORT)
+        loop.create_server(app.make_handler(), host=config.WEB_HOST, port=config.WEB_PORT)
     )
 
 
@@ -42,7 +42,7 @@ async def create_app_async():
     )
     runner = aiohttp.web.AppRunner(app)
     await runner.setup()
-    site = aiohttp.web.TCPSite(runner, "127.0.0.1", config.WEB_PORT)
+    site = aiohttp.web.TCPSite(runner, config.WEB_HOST, config.WEB_PORT)
     try:
         await site.start()
     except OSError:

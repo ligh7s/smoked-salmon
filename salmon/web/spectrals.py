@@ -4,12 +4,15 @@ from itertools import chain
 import aiohttp
 from aiohttp_jinja2 import render_template
 
+import datetime
+
 from salmon.database import DB_PATH
 
 
 async def handle_spectrals(request, **kwargs):
     active_spectrals = get_active_spectrals()
     if active_spectrals:
+        active_spectrals['now'] = datetime.datetime.now()
         return render_template("spectrals.html", request, active_spectrals)
     return aiohttp.web.HTTPNrtFound()
 

@@ -2,6 +2,7 @@ import asyncio
 import os
 import shutil
 import tempfile
+import re
 
 import click
 from dottorrent import Torrent
@@ -9,15 +10,16 @@ from dottorrent import Torrent
 from salmon import config
 from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES, RELEASE_TYPES
-from salmon.images import upload_cover
-
 from salmon.errors import RequestError
 
-from salmon.uploader.spectrals import make_spectral_bbcode
-
-
+from salmon.images import upload_cover
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.sources import METASOURCES
+from salmon.uploader.spectrals import (
+    generate_lossy_approval_comment,
+    make_spectral_bbcode,
+    report_lossy_master,
+)
 
 loop = asyncio.get_event_loop()
 
@@ -34,11 +36,12 @@ def prepare_and_upload(
     spectral_urls,
     lossy_comment,
     request_id,
+    source_url
 ):
     """Wrapper function for all the data compiling and processing."""
     if not group_id:
         if not cover_url:
-            cover_url = upload_cover(path)
+            cover_url = upload_cover(path, scene=metadata['scene'])
         data = compile_data_new_group(
             path,
             metadata,
@@ -48,6 +51,7 @@ def prepare_and_upload(
             spectral_urls,
             lossy_comment,
             request_id,
+            source_url=source_url
         )
     else:
         data = compile_data_existing_group(
@@ -59,21 +63,17 @@ def prepare_and_upload(
             spectral_urls,
             lossy_comment,
             request_id,
+            source_url=source_url
         )
+    if not data['scene']:
+        del data['scene']
     torrent_path, torrent_file = generate_torrent(gazelle_site, path)
     files = compile_files(path, torrent_file, metadata)
 
     click.secho("Uploading torrent...", fg="yellow")
     try:
         torrent_id = loop.run_until_complete(gazelle_site.upload(data, files))
-        shutil.move(
-            torrent_path,
-            os.path.join(
-                gazelle_site.dot_torrents_dir,
-                f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
-            ),
-        )
-        return torrent_id
+        return torrent_id, torrent_path, torrent_file
     except RequestError as e:
         click.secho(str(e), fg="red", bold=True)
         exit()
@@ -96,6 +96,7 @@ def compile_data_new_group(
     spectral_urls,
     lossy_comment,
     request_id=None,
+    source_url=None
 ):
     """
     Compile the data dictionary that needs to be submitted with a brand new
@@ -119,13 +120,14 @@ def compile_data_new_group(
         "format": metadata["format"],
         "bitrate": metadata["encoding"],
         "other_bitrate": None,
+        "scene": metadata["scene"],
         "vbr": metadata["encoding_vbr"],
         "media": metadata["source"],
         "tags": metadata["tags"],
         "image": cover_url,
         "album_desc": generate_description(track_data, metadata),
         "release_desc": generate_t_description(
-            metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment
+            metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment, source_url
         ),
         'requestid': request_id,
     }
@@ -140,10 +142,10 @@ def compile_data_existing_group(
     spectral_urls,
     lossy_comment,
     request_id,
+    source_url=None
 ):
     """Compile the data that needs to be submitted
-     with an upload to an existing group."""
-    # print(generate_t_description(metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment))
+    with an upload to an existing group."""
     return {
         "submit": True,
         "type": 0,
@@ -155,11 +157,12 @@ def compile_data_existing_group(
         "remaster_catalogue_number": generate_catno(metadata),
         "format": metadata["format"],
         "bitrate": metadata["encoding"],
+        "scene": metadata["scene"],
         "other_bitrate": None,
         "vbr": metadata["encoding_vbr"],
         "media": metadata["source"],
         "release_desc": generate_t_description(
-            metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment
+            metadata, track_data, hybrid, metadata["urls"], spectral_urls, lossy_comment, source_url
         ),
         'requestid': request_id,
     }
@@ -210,7 +213,8 @@ def generate_torrent(gazelle_site, path):
     )
     t.generate()
     tpath = os.path.join(
-        tempfile.gettempdir(),
+        #tempfile.gettempdir(),
+        gazelle_site.dot_torrents_dir,
         f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
     )
     with open(tpath, "wb") as tf:
@@ -223,7 +227,7 @@ def generate_description(track_data, metadata):
     """Generate the group description with the tracklist and metadata source links."""
     description = "[b][size=4]Tracklist[/b]\n"
     multi_disc = any(
-        t["t"].discnumber and int(t["t"].discnumber) > 1 for t in track_data.values()
+        t["t"].discnumber and (t["t"].discnumber.startswith('1/') or int(t["t"].discnumber) > 1) for t in track_data.values()
     )
     total_duration = 0
     for track in track_data.values():
@@ -258,7 +262,7 @@ def generate_description(track_data, metadata):
 
 
 def generate_t_description(
-    metadata, track_data, hybrid, metadata_urls, spectral_urls, lossy_comment
+    metadata, track_data, hybrid, metadata_urls, spectral_urls, lossy_comment, source_url
 ):
     """
     Generate the torrent description. Add information about each file, and
@@ -301,6 +305,9 @@ def generate_t_description(
 
     if lossy_comment and config.LMA_COMMENT_IN_T_DESC:
         description += f"[u]Lossy Notes:[/u]\n{lossy_comment}\n\n"
+
+    if source_url is not None:
+        description += f"[b]Source:[/b]\n[url]{source_url}[/url]\n\n"
 
     if metadata_urls:
         description += "[b]More info:[/b] " + generate_source_links(metadata_urls)

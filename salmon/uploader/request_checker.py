@@ -3,13 +3,11 @@ import re
 from urllib import parse
 
 import click
+import rich
 
 from salmon import config
-from salmon.common import RE_FEAT, make_searchstrs, format_size
-from salmon.errors import AbortAndDeleteFolder
-
-from salmon.errors import RequestError
-import rich
+from salmon.common import RE_FEAT, format_size, make_searchstrs
+from salmon.errors import AbortAndDeleteFolder, RequestError
 
 loop = asyncio.get_event_loop()
 
@@ -107,7 +105,8 @@ def _print_request_details(gazelle_site, req):
         req['mediaList'].append(str('CD ' + req['logCue']))
     click.secho(f"Allowed   Media: {' | '.join(req['mediaList'])}")
     click.secho(
-        'Description:', fg="cyan",
+        'Description:',
+        fg="cyan",
     )
     description = req['bbDescription'].splitlines(True)
 

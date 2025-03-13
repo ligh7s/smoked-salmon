@@ -1,14 +1,12 @@
-import requests
-
-from salmon import config
-from salmon.errors import ImageUploadFailed
-from salmon.images.base import BaseImageUploader
-
 from random import choice
 
+import requests
 from bs4 import BeautifulSoup
-from salmon.constants import UAGENTS
 
+from salmon import config
+from salmon.constants import UAGENTS
+from salmon.errors import ImageUploadFailed
+from salmon.images.base import BaseImageUploader
 
 HEADERS = {
     "User-Agent": choice(UAGENTS),

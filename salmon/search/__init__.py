@@ -20,7 +20,7 @@ from salmon.search import (
     itunes,
     junodownload,
     musicbrainz,
-    tidal,
+#    tidal,
 )
 
 SEARCHSOURCES = {
@@ -30,7 +30,7 @@ SEARCHSOURCES = {
     "Junodownload": junodownload,
     "Discogs": discogs,
     "Beatport": beatport,
-    "Tidal": tidal,
+#    "Tidal": tidal,
     "Deezer": deezer,
 }
 

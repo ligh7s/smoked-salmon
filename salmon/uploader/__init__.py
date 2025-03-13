@@ -51,7 +51,11 @@ from salmon.uploader.upload import (
     concat_track_data,
     prepare_and_upload,
 )
+from salmon.rutorrent.rutorrent import (
+    add_torrent_to_rutorrent
+)
 from salmon.checks.upconverts import upload_upconvert_test
+from salmon.checks.integrity import (check_integrity, sanitize_integrity)
 
 loop = asyncio.get_event_loop()
 
@@ -114,6 +118,36 @@ loop = asyncio.get_event_loop()
     is_flag=True,
     help='Assess / upload / report spectrals after torrent upload',
 )
+@click.option(
+    "--auto-rename",
+    "-n",
+    is_flag=True,
+    help=f'Rename files and folders automatically',
+)
+@click.option(
+    "--skip-up",
+    is_flag=True,
+    help=f'Skip check for 24 bit upconversion',
+)
+@click.option(
+    "--scene",
+    is_flag=True,
+    help=f'Is this a scene release (default: False)'
+)
+@click.option(
+    "--rutorrent",
+    is_flag=True,
+    help=f'Adds torrent to Rutorrent tracker after torrent upload (default: False)'
+)
+@click.option("--source-url", "-su", 
+    default=None, 
+    help=f'For WEB uploads provide the source of the album to be added in release description'
+)
+@click.option(
+    "-yyy",
+    is_flag=True,
+    help=f'Automatically pick the default answer for prompt'
+)
 def up(
     path,
     group_id,
@@ -126,8 +160,16 @@ def up(
     tracker,
     request,
     spectrals_after,
+    auto_rename,
+    skip_up,
+    scene,
+    rutorrent,
+    source_url,
+    yyy
 ):
     """Command to upload an album folder to a Gazelle Site."""
+    if yyy:
+        config.YES_ALL = True
     gazelle_site = salmon.trackers.get_class(tracker)()
     if request:
         request = salmon.trackers.validate_request(gazelle_site, request)
@@ -142,6 +184,8 @@ def up(
         encoding,
         spectrals_after,
     )
+    if source_url:
+        source_url = source_url.strip()
     upload(
         gazelle_site,
         path,
@@ -150,10 +194,15 @@ def up(
         lossy,
         spectrals,
         encoding,
+        source_url=source_url,
+        scene=scene,
+        rutorrent=rutorrent,
         overwrite_meta=overwrite,
         recompress=compress,
         request_id=request,
         spectrals_after=spectrals_after,
+        auto_rename=auto_rename,
+        skip_up=skip_up,
     )
 
 
@@ -165,6 +214,8 @@ def upload(
     lossy,
     spectrals,
     encoding,
+    scene=False,
+    rutorrent=False,
     existing=None,
     overwrite_meta=False,
     recompress=False,
@@ -172,6 +223,8 @@ def upload(
     searchstrs=None,
     request_id=None,
     spectrals_after=False,
+    auto_rename=False,
+    skip_up=False,
 ):
     """Upload an album folder to Gazelle Site
     Offer the choice to upload to another tracker after completion."""
@@ -187,26 +240,30 @@ def upload(
         audio_info,
         source,
         encoding,
+        scene=scene,
         existing=existing,
         overwrite=overwrite_meta,
         prompt_encoding=True,
     )
 
     try:
-        if rls_data["encoding"] == "24bit Lossless" and click.confirm(
-            click.style(
-                "24bit detected. Do you want to check whether might be upconverted?",
-                fg="magenta",
-            ),
-            default=True,
-        ):
-            upload_upconvert_test(path)
+        if rls_data["encoding"] == "24bit Lossless" and not skip_up:
+            if not config.YES_ALL:
+                if click.confirm(
+                        click.style(
+                            "24bit detected. Do you want to check whether might be upconverted?",
+                            fg="magenta",),
+                        default=True,):
+                    upload_upconvert_test(path)
+            else:
+                upload_upconvert_test(path)
 
         if group_id is None:
             searchstrs = generate_dupe_check_searchstrs(
                 rls_data["artists"], rls_data["title"], rls_data["catno"]
             )
-            group_id = check_existing_group(gazelle_site, searchstrs)
+            if len(searchstrs) > 0:
+                group_id = check_existing_group(gazelle_site, searchstrs)
 
         if spectrals_after:
             lossy_master = False
@@ -218,7 +275,7 @@ def upload(
         metadata = get_metadata(path, tags, rls_data)
         download_cover_if_nonexistent(path, metadata["cover"])
         path, metadata, tags, audio_info = edit_metadata(
-            path, tags, metadata, source, rls_data, recompress
+            path, tags, metadata, source, rls_data, recompress, auto_rename
         )
         if not group_id:
             group_id = recheck_dupe(gazelle_site, searchstrs, metadata)
@@ -249,7 +306,7 @@ def upload(
 
     if not group_id:
         # This prevents the cover being uploaded more than once for multiple sites.
-        cover_url = upload_cover(path)
+        cover_url = upload_cover(path, scene)
     else:
         cover_url = None
 
@@ -283,7 +340,7 @@ def upload(
         if not request_id and config.CHECK_REQUESTS:
             request_id = check_requests(gazelle_site, searchstrs)
 
-        torrent_id = prepare_and_upload(
+        torrent_id, torrent_path, torrent_file = prepare_and_upload(
             gazelle_site,
             path,
             group_id,
@@ -295,6 +352,7 @@ def upload(
             spectral_urls,
             lossy_comment,
             request_id,
+            source_url
         )
         if lossy_master:
             report_lossy_master(
@@ -313,6 +371,13 @@ def upload(
             fg="green",
             bold=True,
         )
+        if rutorrent:
+            click.secho(
+            f"\nAdding torrent to client {config.RUTORRENT_URL} {config.TRACKER_DIRS[tracker]} {config.TRACKER_LABELS[tracker]}",
+            fg="green",
+            bold=True
+            )
+            add_torrent_to_rutorrent(config.RUTORRENT_URL, torrent_path, config.TRACKER_DIRS[tracker], config.TRACKER_LABELS[tracker])
         if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
             pyperclip.copy(url)
         tracker = None
@@ -321,7 +386,7 @@ def upload(
             return click.secho("\nDone uploading this release.", fg="green")
 
 
-def edit_metadata(path, tags, metadata, source, rls_data, recompress):
+def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_rename):
     """
     The metadata editing portion of the uploading process. This sticks the user
     into an infinite loop where the metadata process is repeated until the user
@@ -329,16 +394,33 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress):
     """
     while True:
         metadata = review_metadata(metadata, metadata_validator)
-        tag_files(path, tags, metadata)
+        if not metadata['scene']:
+            tag_files(path, tags, metadata, auto_rename)
 
         tags = check_tags(path)
         if recompress:
             recompress_path(path)
-        path = rename_folder(path, metadata)
-        rename_files(path, tags, metadata, source)
-        check_folder_structure(path)
+        path = rename_folder(path, metadata, auto_rename)
+        if not metadata['scene']:
+            rename_files(path, tags, metadata, auto_rename, source)
+            check_folder_structure(path)
 
-        if click.confirm(
+        if config.YES_ALL or click.confirm(
+            click.style(
+                "Do you want to check for integrity of this upload?",
+                fg="magenta"),
+            default=True,
+            ):
+            (integrity, integrity_output) = check_integrity(path)
+            if not integrity and True if config.YES_ALL else click.confirm(
+                click.style(
+                    "Do you want to sanitize this upload?",
+                    fg="magenta"),
+                default=True,
+                ):
+                sanitize_integrity(path)
+
+        if config.YES_ALL or click.confirm(
             click.style(
                 "\nWould you like to upload the torrent? (No to re-run metadata "
                 "section)",

@@ -140,17 +140,18 @@ def parse_artists(artist_soup, track):
             )
         ]
     if "extraartists" in track:
-        artists += [
-            *(
-                (sanitize_artist_name(art["name"]), ROLES[art["role"]])
-                for art in track["extraartists"]
-                if art["role"] in ROLES
-            )
-        ]
-        for a, i in [
-            (a, i) for a, i in artists if i != "main" and (a, "main") in artists
-        ]:
-            artists.remove((a, "main"))
+        for art in track["extraartists"]:
+            for role in art['role'].split(","):
+                role = role.strip()
+                if role in ROLES:
+                    artists.append((sanitize_artist_name(art['name']), ROLES[role]))
+        for name, role in artists:
+            if role != "main" and (name, "main") in artists:
+                artists.remove((name, "main"))
+#        for a, i in [
+#            (a, i) for a, i in artists if i != "main" and (a, "main") in artists
+#        ]:
+#            artists.remove((a, "main"))
     return artists
 
 

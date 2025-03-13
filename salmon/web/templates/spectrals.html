@@ -13,12 +13,12 @@
     <p><span class="filename_spectral">{{ filename }}</span></p>
     <div class="track_spectrals">
         <div class="full_spectral_image">
-            <img src="{{ static('/specs') }}/{{ '%02d' | format(id) }} Full.png"
+            <img src="{{ static('/specs') }}/{{ '%02d' | format(id) }} Full.png?{{ now }}"
                  alt="Full spectral for {{ filename }}"
                  onclick="show_lightbox({{ id }});">
         </div>
         <div class="zoom_spectral_image">
-            <img src="{{ static('/specs') }}/{{ '%02d' | format(id) }} Zoom.png"
+            <img src="{{ static('/specs') }}/{{ '%02d' | format(id) }} Zoom.png?{{ now }}"
                  alt="Zoom spectral for {{ filename }}"
                  onclick="show_lightbox({{ id }});">
         </div>
